@@ -99,6 +99,7 @@ namespace CineFlow.Models
         public string FormatEtiketi => Format switch
         {
             "TV" => "TV Anime",
+            "SERIES" => "Dizi",
             "TV_SHORT" => "TV Short",
             "MOVIE" => "Film",
             "SPECIAL" => "Special",

@@ -8,6 +8,7 @@ namespace CineFlow.Models.ViewModels
         public List<Icerik> Icerikler { get; set; } = new();
         public List<string> Kategoriler { get; set; } = new();
         public List<string> Formatlar { get; set; } = new();
+        public Icerik? OneCikanIcerik { get; set; }
         public string? Arama { get; set; }
         public string? Kategori { get; set; }
         public string? Format { get; set; }
@@ -15,5 +16,6 @@ namespace CineFlow.Models.ViewModels
         public int ToplamIcerik { get; set; }
         public int AnimeSayisi { get; set; }
         public int MangaSayisi { get; set; }
+        public int DiziSayisi { get; set; }
     }
 }

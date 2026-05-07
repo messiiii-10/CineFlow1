@@ -69,6 +69,10 @@ namespace CineFlow.Controllers
                 ToplamIcerik = tumIcerikler.Count,
                 AnimeSayisi = tumIcerikler.Count(x => x.Tur == IcerikTuru.Anime),
                 MangaSayisi = tumIcerikler.Count(x => x.Tur == IcerikTuru.Manga),
+                DiziSayisi = tumIcerikler.Count(x => x.Tur == IcerikTuru.Dizi),
+                OneCikanIcerik = tumIcerikler.FirstOrDefault(x => x.Tur == IcerikTuru.Dizi && !string.IsNullOrWhiteSpace(x.GorselKaynak))
+                    ?? tumIcerikler.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x.GorselKaynak))
+                    ?? tumIcerikler.FirstOrDefault(),
                 Kategoriler = tumIcerikler
                     .SelectMany(x => x.KategoriListesi)
                     .Distinct(StringComparer.OrdinalIgnoreCase)

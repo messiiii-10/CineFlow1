@@ -4,13 +4,14 @@
 @{
     var currentUser = Context.Session.GetString("User");
     var isAdmin = Context.Session.GetString("AdminAuth") == "true";
+    var featured = Model.OneCikanIcerik;
 }
 
 <section class="hero-panel mt-4">
     <div>
         <div class="eyebrow mb-3">Wiki Katalog</div>
-        <h1>Popüler ve kült anime ile manga arşivini tek yerde gez.</h1>
-        <p class="lead-copy">CineFlow artık yüzlerce detayla büyüyen bir anime-manga kataloğu: arama, filtre, bilgi kutusu, karakter listesi ve dış kaynak bağlantıları tek akışta.</p>
+        <h1>Popüler ve kült anime, manga ve dizileri tek yerde gez.</h1>
+        <p class="lead-copy">CineFlow artık sadece anime odaklı değil; detaylı wiki sayfaları, arama sistemi ve geniş katalogla manga ve dizileri de aynı çatı altında topluyor.</p>
         <div class="cta-row">
             <a class="btn btn-light rounded-pill px-4" href="#arama">Aramaya Git</a>
             @if (isAdmin)
@@ -23,20 +24,26 @@
             }
         </div>
     </div>
-    <div class="surface-panel hero-stats">
-        <div>
-            <span class="stat-label">Yayındaki içerik</span>
-            <strong>@Model.ToplamIcerik</strong>
-        </div>
-        <div>
-            <span class="stat-label">Anime</span>
-            <strong>@Model.AnimeSayisi</strong>
-        </div>
-        <div>
-            <span class="stat-label">Manga</span>
-            <strong>@Model.MangaSayisi</strong>
-        </div>
-    </div>
+    @if (featured is not null)
+    {
+        <a class="hero-visual" href="/Home/Detay/@featured.Id">
+            @if (!string.IsNullOrWhiteSpace(featured.GorselKaynak))
+            {
+                <img src="@featured.GorselKaynak" alt="@featured.Baslik kapağı" />
+            }
+            else
+            {
+                <div class="poster-placeholder hero-visual__placeholder">
+                    <span>@featured.TurEtiketi</span>
+                </div>
+            }
+            <div class="hero-visual__overlay">
+                <span class="stat-label">Öne Çıkan</span>
+                <strong>@featured.Baslik</strong>
+                <p>@featured.FormatEtiketi • @featured.TurEtiketi • @featured.DonemEtiketi</p>
+            </div>
+        </a>
+    }
 </section>
 
 <section id="arama" class="surface-panel mt-5">
@@ -60,6 +67,7 @@
                     <option value="">Tümü</option>
                     <option value="Anime" selected="@(Model.Tur == CineFlow.Models.IcerikTuru.Anime)">Anime</option>
                     <option value="Manga" selected="@(Model.Tur == CineFlow.Models.IcerikTuru.Manga)">Manga</option>
+                    <option value="Dizi" selected="@(Model.Tur == CineFlow.Models.IcerikTuru.Dizi)">Dizi</option>
                 </select>
             </div>
             <div>

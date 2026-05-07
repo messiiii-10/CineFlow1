@@ -1,0 +1,51 @@
+@model CineFlow.Models.Icerik
+
+<section class="surface-panel form-panel mt-4">
+    <div class="section-heading mb-4">
+        <div>
+            <div class="eyebrow">Yeni Kayıt</div>
+            <h1>İçerik Ekle</h1>
+        </div>
+        <a href="/Admin/Index" class="btn btn-outline-dark rounded-pill px-4">Panele Dön</a>
+    </div>
+
+    <form asp-action="Ekle" method="post" enctype="multipart/form-data" novalidate>
+        <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+        <div class="row g-4">
+            <div class="col-md-6">
+                <label asp-for="Baslik" class="form-label"></label>
+                <input asp-for="Baslik" class="form-control form-control-lg" placeholder="Örn: Death Note" />
+                <span asp-validation-for="Baslik" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="Tur" class="form-label"></label>
+                <select asp-for="Tur" asp-items="Html.GetEnumSelectList<IcerikTuru>()" class="form-select form-select-lg"></select>
+                <span asp-validation-for="Tur" class="text-danger small"></span>
+            </div>
+
+            <div class="col-12">
+                <label asp-for="Kategori" class="form-label"></label>
+                <input asp-for="Kategori" class="form-control form-control-lg" placeholder="Dram, Bilim Kurgu, Gerilim..." />
+                <span asp-validation-for="Kategori" class="text-danger small"></span>
+            </div>
+
+            <div class="col-12">
+                <label asp-for="Aciklama" class="form-label"></label>
+                <textarea asp-for="Aciklama" class="form-control form-control-lg" rows="6" placeholder="İçeriğin kısa ama güçlü bir özetini yazın."></textarea>
+                <span asp-validation-for="Aciklama" class="text-danger small"></span>
+            </div>
+
+            <div class="col-12">
+                <label class="form-label">Afiş Görseli</label>
+                <input type="file" name="afis" class="form-control form-control-lg" accept="image/*" />
+                <div class="helper-copy mt-2">Görsel yüklemezsen içerik kartında yer tutucu görsel kullanılır.</div>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <button type="submit" class="btn btn-dark rounded-pill px-4 py-3">İçeriği Kaydet</button>
+        </div>
+    </form>
+</section>

@@ -1,0 +1,210 @@
+@model CineFlow.Models.ViewModels.IcerikDetayViewModel
+@using Microsoft.AspNetCore.Http
+@using System.Linq
+
+@{
+    var currentUser = Context.Session.GetString("User");
+    var item = Model.Icerik;
+    var hasPoster = !string.IsNullOrWhiteSpace(item.GorselKaynak);
+    var hasBanner = !string.IsNullOrWhiteSpace(item.BannerKaynak);
+}
+
+<div class="page-intro mt-4">
+    <a href="/" class="back-link"><i class="bi bi-arrow-left"></i> Kataloğa dön</a>
+</div>
+
+<section class="wiki-hero mt-3" style="@(hasBanner ? $"background-image: linear-gradient(120deg, rgba(8,10,17,.78), rgba(8,10,17,.92)), url('{item.BannerKaynak}');" : "")">
+    <div>
+        <div class="meta-row mb-3">
+            <span class="soft-badge">@item.TurEtiketi</span>
+            <span class="soft-badge">@item.FormatEtiketi</span>
+            <span class="soft-badge">@item.DurumEtiketi</span>
+        </div>
+        <h1>@item.Baslik</h1>
+        @if (!string.IsNullOrWhiteSpace(item.AlternatifBaslik) || !string.IsNullOrWhiteSpace(item.OrijinalBaslik))
+        {
+            <p class="wiki-subtitle">@item.AlternatifBaslik @(!string.IsNullOrWhiteSpace(item.AlternatifBaslik) && !string.IsNullOrWhiteSpace(item.OrijinalBaslik) ? "•" : "") @item.OrijinalBaslik</p>
+        }
+        <p class="lead-copy mb-0">Popülerlik, yapım bilgisi, karakterler ve tür etiketleriyle zenginleştirilmiş detay sayfası.</p>
+    </div>
+</section>
+
+<section class="detail-shell mt-4">
+    <div>
+        @if (hasPoster)
+        {
+            <img src="@item.GorselKaynak" alt="@item.Baslik afişi" class="detail-poster" />
+        }
+        else
+        {
+            <div class="detail-placeholder">
+                <span>@item.TurEtiketi</span>
+            </div>
+        }
+    </div>
+
+    <div class="surface-panel detail-copy">
+        <div class="wiki-section">
+            <div class="eyebrow">Özet</div>
+            <p class="detail-description">@item.Aciklama</p>
+        </div>
+
+        <div class="wiki-summary-grid">
+            <div>
+                <span class="stat-label">Skor</span>
+                <strong>@item.SkorEtiketi</strong>
+            </div>
+            <div>
+                <span class="stat-label">Popülerlik</span>
+                <strong>@item.PopulerlikEtiketi</strong>
+            </div>
+            <div>
+                <span class="stat-label">Dönem</span>
+                <strong>@item.DonemEtiketi</strong>
+            </div>
+            <div>
+                <span class="stat-label">Yorum</span>
+                <strong>@item.Yorumlar.Count</strong>
+            </div>
+        </div>
+
+        <div class="wiki-infobox mt-4">
+            <div><span>Tür</span><strong>@item.TurEtiketi</strong></div>
+            <div><span>Format</span><strong>@item.FormatEtiketi</strong></div>
+            <div><span>Durum</span><strong>@item.DurumEtiketi</strong></div>
+            <div><span>Kaynak</span><strong>@item.KaynakEtiketi</strong></div>
+            <div><span>Stüdyo / Yayıncı</span><strong>@(string.IsNullOrWhiteSpace(item.Studyo) ? "Bilinmiyor" : item.Studyo)</strong></div>
+            <div><span>Yaratıcılar</span><strong>@(string.IsNullOrWhiteSpace(item.Yaraticilar) ? "Bilinmiyor" : item.Yaraticilar)</strong></div>
+            <div><span>Episode / Chapter</span><strong>@(item.BolumSayisi?.ToString() ?? "Bilinmiyor")</strong></div>
+            <div><span>Volume</span><strong>@(item.CiltSayisi?.ToString() ?? "-")</strong></div>
+            <div><span>Süre</span><strong>@(item.SureDakika is null ? "-" : $"{item.SureDakika} dk")</strong></div>
+        </div>
+
+        @if (item.KategoriListesi.Count > 0)
+        {
+            <div class="wiki-section mt-4">
+                <div class="eyebrow">Kategoriler</div>
+                <div class="tag-cloud">
+                    @foreach (var kategori in item.KategoriListesi)
+                    {
+                        <span class="soft-badge">@kategori</span>
+                    }
+                </div>
+            </div>
+        }
+
+        @if (item.EtiketListesi.Count > 0)
+        {
+            <div class="wiki-section mt-4">
+                <div class="eyebrow">Öne Çıkan Etiketler</div>
+                <div class="tag-cloud">
+                    @foreach (var etiket in item.EtiketListesi)
+                    {
+                        <span class="soft-badge soft-badge--dark">@etiket</span>
+                    }
+                </div>
+            </div>
+        }
+
+        @if (item.KarakterListesi.Count > 0)
+        {
+            <div class="wiki-section mt-4">
+                <div class="eyebrow">Ana Karakterler</div>
+                <div class="character-list">
+                    @foreach (var karakter in item.KarakterListesi)
+                    {
+                        <span>@karakter</span>
+                    }
+                </div>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(item.DisBaglanti))
+        {
+            <div class="mt-4">
+                <a href="@item.DisBaglanti" target="_blank" rel="noreferrer" class="btn btn-outline-dark rounded-pill px-4">Harici Kaynağı Aç</a>
+            </div>
+        }
+    </div>
+</section>
+
+<section class="surface-panel mt-4">
+    <div class="section-heading mb-4">
+        <div>
+            <div class="eyebrow">Topluluk</div>
+            <h2>Yorumlar</h2>
+        </div>
+        <p>İçeriğe dair düşüncelerini burada paylaşabilirsin.</p>
+    </div>
+
+    @if (TempData["CommentError"] is string errorMessage)
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(currentUser))
+    {
+        <form asp-action="YorumYap" method="post" class="comment-form">
+            <input type="hidden" name="icerikId" value="@item.Id" />
+            <label class="form-label">Yorumun</label>
+            <textarea name="mesaj" class="form-control form-control-lg mb-3" rows="4" maxlength="500" placeholder="Bu içerik hakkında ne düşünüyorsun?" required></textarea>
+            <button class="btn btn-dark rounded-pill px-4" type="submit">Yorumu Gönder</button>
+        </form>
+    }
+    else
+    {
+        <div class="alert alert-warning mb-4">
+            Yorum yapabilmek için <a href="/Home/Login">giriş yap</a> veya <a href="/Home/Kayit">hesap oluştur</a>.
+        </div>
+    }
+
+    @if (item.Yorumlar.Count == 0)
+    {
+        <div class="empty-state">
+            <h3>Henüz yorum yok</h3>
+            <p>İlk görüşü paylaşan kullanıcı sen olabilirsin.</p>
+        </div>
+    }
+    else
+    {
+        <div class="comment-list">
+            @foreach (var y in item.Yorumlar.OrderByDescending(x => x.Tarih))
+            {
+                <article class="comment-card">
+                    <div class="comment-card__head">
+                        <strong>@y.KullaniciAdi</strong>
+                        <span>@y.Tarih.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</span>
+                    </div>
+                    <p>@y.Mesaj</p>
+                </article>
+            }
+        </div>
+    }
+</section>
+
+@if (Model.BenzerIcerikler.Count > 0)
+{
+    <section class="mt-4">
+        <div class="section-heading mb-3">
+            <div>
+                <div class="eyebrow">Benzer İçerikler</div>
+                <h2>Aynı evrende gezmeye devam et</h2>
+            </div>
+        </div>
+        <div class="related-grid">
+            @foreach (var benzer in Model.BenzerIcerikler)
+            {
+                <a class="related-card" href="/Home/Detay/@benzer.Id">
+                    @if (!string.IsNullOrWhiteSpace(benzer.GorselKaynak))
+                    {
+                        <img src="@benzer.GorselKaynak" alt="@benzer.Baslik" />
+                    }
+                    <div>
+                        <strong>@benzer.Baslik</strong>
+                        <span>@benzer.FormatEtiketi • @benzer.SkorEtiketi</span>
+                    </div>
+                </a>
+            }
+        </div>
+    </section>
+}

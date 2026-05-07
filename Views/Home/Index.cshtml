@@ -1,0 +1,158 @@
+﻿@model CineFlow.Models.ViewModels.CatalogIndexViewModel
+@using Microsoft.AspNetCore.Http
+
+@{
+    var currentUser = Context.Session.GetString("User");
+    var isAdmin = Context.Session.GetString("AdminAuth") == "true";
+}
+
+<section class="hero-panel mt-4">
+    <div>
+        <div class="eyebrow mb-3">Wiki Katalog</div>
+        <h1>Popüler ve kült anime ile manga arşivini tek yerde gez.</h1>
+        <p class="lead-copy">CineFlow artık yüzlerce detayla büyüyen bir anime-manga kataloğu: arama, filtre, bilgi kutusu, karakter listesi ve dış kaynak bağlantıları tek akışta.</p>
+        <div class="cta-row">
+            <a class="btn btn-light rounded-pill px-4" href="#arama">Aramaya Git</a>
+            @if (isAdmin)
+            {
+                <a class="btn btn-outline-light rounded-pill px-4" href="/Admin/Index">Yönetim Paneli</a>
+            }
+            else if (string.IsNullOrWhiteSpace(currentUser))
+            {
+                <a class="btn btn-outline-light rounded-pill px-4" href="/Home/Kayit">Topluluğa Katıl</a>
+            }
+        </div>
+    </div>
+    <div class="surface-panel hero-stats">
+        <div>
+            <span class="stat-label">Yayındaki içerik</span>
+            <strong>@Model.ToplamIcerik</strong>
+        </div>
+        <div>
+            <span class="stat-label">Anime</span>
+            <strong>@Model.AnimeSayisi</strong>
+        </div>
+        <div>
+            <span class="stat-label">Manga</span>
+            <strong>@Model.MangaSayisi</strong>
+        </div>
+    </div>
+</section>
+
+<section id="arama" class="surface-panel mt-5">
+    <div class="section-heading mb-4">
+        <div>
+            <div class="eyebrow">Arama Merkezi</div>
+            <h2>Başlık, karakter, etiket veya yaratıcı ara</h2>
+        </div>
+        <p>Filtreleri birlikte kullanıp katalogu daraltabilirsin.</p>
+    </div>
+
+    <form method="get" asp-action="Index" class="search-form">
+        <div class="search-grid">
+            <div>
+                <label class="form-label">Arama</label>
+                <input type="text" name="q" value="@Model.Arama" class="form-control form-control-lg" placeholder="JoJo, Urasawa, mecha, tragedy..." />
+            </div>
+            <div>
+                <label class="form-label">Tür</label>
+                <select name="tur" class="form-select form-select-lg">
+                    <option value="">Tümü</option>
+                    <option value="Anime" selected="@(Model.Tur == CineFlow.Models.IcerikTuru.Anime)">Anime</option>
+                    <option value="Manga" selected="@(Model.Tur == CineFlow.Models.IcerikTuru.Manga)">Manga</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Kategori</label>
+                <select name="kategori" class="form-select form-select-lg">
+                    <option value="">Hepsi</option>
+                    @foreach (var item in Model.Kategoriler)
+                    {
+                        <option value="@item" selected="@(Model.Kategori == item)">@item</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Format</label>
+                <select name="format" class="form-select form-select-lg">
+                    <option value="">Hepsi</option>
+                    @foreach (var item in Model.Formatlar)
+                    {
+                        <option value="@item" selected="@(Model.Format == item)">@item</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="cta-row mt-4">
+            <button type="submit" class="btn btn-dark rounded-pill px-4">Ara</button>
+            <a href="/" class="btn btn-outline-dark rounded-pill px-4">Temizle</a>
+        </div>
+    </form>
+</section>
+
+<section id="katalog" class="mt-5">
+    <div class="section-heading">
+        <div>
+            <div class="eyebrow">Katalog</div>
+            <h2>Sonuçlar</h2>
+        </div>
+        <p>@Model.Icerikler.Count sonuç listeleniyor.</p>
+    </div>
+
+    @if (Model.Icerikler.Count == 0)
+    {
+        <div class="surface-panel empty-state">
+            <h3>Eşleşen içerik bulunamadı</h3>
+            <p>Arama metnini veya filtreleri değiştirip tekrar deneyebilirsin.</p>
+        </div>
+    }
+    else
+    {
+        <div class="content-grid">
+            @foreach (var item in Model.Icerikler)
+            {
+                var hasPoster = !string.IsNullOrWhiteSpace(item.GorselKaynak);
+                var summary = item.Aciklama.Length > 180 ? item.Aciklama[..180] + "..." : item.Aciklama;
+
+                <article class="catalog-card">
+                    @if (hasPoster)
+                    {
+                        <img src="@item.GorselKaynak" alt="@item.Baslik afişi" class="poster-frame" />
+                    }
+                    else
+                    {
+                        <div class="poster-placeholder">
+                            <span>@item.TurEtiketi</span>
+                        </div>
+                    }
+
+                    <div class="catalog-card__body">
+                        <div class="meta-row">
+                            <span class="soft-badge">@item.TurEtiketi</span>
+                            <span class="soft-badge">@item.FormatEtiketi</span>
+                            @if (item.KategoriListesi.Count > 0)
+                            {
+                                <span class="soft-badge">@item.KategoriListesi.First()</span>
+                            }
+                        </div>
+                        <h3>@item.Baslik</h3>
+                        @if (!string.IsNullOrWhiteSpace(item.AlternatifBaslik))
+                        {
+                            <div class="catalog-subtitle">@item.AlternatifBaslik</div>
+                        }
+                        <p>@summary</p>
+                        <div class="catalog-micro">
+                            <span>@item.DonemEtiketi</span>
+                            <span>@item.SkorEtiketi</span>
+                            <span>@item.DurumEtiketi</span>
+                        </div>
+                        <div class="catalog-card__footer">
+                            <span class="text-muted small">@item.Yorumlar.Count yorum</span>
+                            <a asp-action="Detay" asp-route-id="@item.Id" class="btn btn-dark rounded-pill px-4">Wiki Aç</a>
+                        </div>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</section>

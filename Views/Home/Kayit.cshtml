@@ -1,0 +1,45 @@
+@model CineFlow.Models.ViewModels.UserRegisterViewModel
+
+<section class="auth-shell">
+    <div class="auth-copy">
+        <div class="eyebrow">Yeni Hesap</div>
+        <h1>Topluluk özelliklerini kullanmak için birkaç saniyede hesap oluştur.</h1>
+        <p>Şifreler güvenli biçimde hashlenerek saklanır. E-posta alanı artık belirli bir sağlayıcıya bağlı değil.</p>
+    </div>
+
+    <div class="form-card">
+        <h2>Kayıt Ol</h2>
+
+        <form asp-action="Kayit" method="post" novalidate>
+            <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+            <div class="mb-3">
+                <label asp-for="Username" class="form-label"></label>
+                <input asp-for="Username" class="form-control form-control-lg" placeholder="ornek_kullanici" />
+                <span asp-validation-for="Username" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label"></label>
+                <input asp-for="Email" class="form-control form-control-lg" placeholder="ornek@site.com" />
+                <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Password" class="form-label"></label>
+                <input asp-for="Password" class="form-control form-control-lg" placeholder="En az 8 karakter, 1 büyük harf, 1 sembol" />
+                <span asp-validation-for="Password" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-4">
+                <label asp-for="ConfirmPassword" class="form-label"></label>
+                <input asp-for="ConfirmPassword" class="form-control form-control-lg" placeholder="Şifreyi tekrar girin" />
+                <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+            </div>
+
+            <button type="submit" class="btn btn-dark w-100 rounded-pill py-3">Hesabı Oluştur</button>
+        </form>
+
+        <p class="helper-copy">Zaten hesabın varsa <a href="/Home/Login">giriş yap</a>.</p>
+    </div>
+</section>

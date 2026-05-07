@@ -1,0 +1,55 @@
+@model CineFlow.Models.Icerik
+
+<section class="surface-panel form-panel mt-4">
+    <div class="section-heading mb-4">
+        <div>
+            <div class="eyebrow">Düzenleme</div>
+            <h1>İçerik Güncelle</h1>
+        </div>
+        <a href="/Admin/Index" class="btn btn-outline-dark rounded-pill px-4">Vazgeç</a>
+    </div>
+
+    <form asp-action="Duzenle" method="post" enctype="multipart/form-data" novalidate>
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+        <div class="row g-4">
+            <div class="col-md-6">
+                <label asp-for="Baslik" class="form-label"></label>
+                <input asp-for="Baslik" class="form-control form-control-lg" placeholder="İçerik adını yazın" />
+                <span asp-validation-for="Baslik" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="Kategori" class="form-label"></label>
+                <input asp-for="Kategori" class="form-control form-control-lg" placeholder="Dram, Suç, Bilim Kurgu..." />
+                <span asp-validation-for="Kategori" class="text-danger small"></span>
+            </div>
+
+            <div class="col-12">
+                <label asp-for="Aciklama" class="form-label"></label>
+                <textarea asp-for="Aciklama" class="form-control form-control-lg" rows="6" placeholder="Konusunu buraya yazın"></textarea>
+                <span asp-validation-for="Aciklama" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="Tur" class="form-label"></label>
+                <select asp-for="Tur" asp-items="Html.GetEnumSelectList<IcerikTuru>()" class="form-select form-select-lg"></select>
+                <span asp-validation-for="Tur" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Yeni Afiş</label>
+                <input type="file" name="afis" class="form-control form-control-lg" accept="image/*" />
+                @if (!string.IsNullOrWhiteSpace(Model.ResimYolu))
+                {
+                    <div class="helper-copy mt-2">Mevcut görsel: <code>@Model.ResimYolu</code></div>
+                }
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <button type="submit" class="btn btn-dark rounded-pill px-4 py-3">Değişiklikleri Kaydet</button>
+        </div>
+    </form>
+</section>

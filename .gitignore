@@ -1,0 +1,9 @@
+[Bb]in/
+[Oo]bj/
+.vs/
+.vscode/
+*.user
+cineflow.db
+cineflow.db-shm
+cineflow.db-wal
+*.vsix

@@ -1,0 +1,38 @@
+@model CineFlow.Models.ViewModels.UserLoginViewModel
+
+<section class="auth-shell">
+    <div class="auth-copy">
+        <div class="eyebrow">Hesap Erişimi</div>
+        <h1>Yorum yapmak ve kataloğu kişisel oturumunla kullanmak için giriş yap.</h1>
+        <p>Artık sadece Gmail değil, tüm geçerli e-posta adresleri destekleniyor.</p>
+    </div>
+
+    <div class="form-card">
+        <h2>Kullanıcı Girişi</h2>
+
+        @if (TempData["AuthMessage"] is string authMessage)
+        {
+            <div class="alert alert-success">@authMessage</div>
+        }
+
+        <form asp-action="Login" method="post" novalidate>
+            <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label"></label>
+                <input asp-for="Email" class="form-control form-control-lg" placeholder="ornek@site.com" />
+                <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-4">
+                <label asp-for="Password" class="form-label"></label>
+                <input asp-for="Password" class="form-control form-control-lg" placeholder="Şifreniz" />
+                <span asp-validation-for="Password" class="text-danger small"></span>
+            </div>
+
+            <button type="submit" class="btn btn-dark w-100 rounded-pill py-3">Giriş Yap</button>
+        </form>
+
+        <p class="helper-copy">Hesabın yoksa <a href="/Home/Kayit">kayıt sayfasına geç</a>.</p>
+    </div>
+</section>

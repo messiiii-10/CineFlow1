@@ -1,0 +1,70 @@
+@model List<CineFlow.Models.Icerik>
+
+<section class="page-intro mt-4">
+    <div class="section-heading">
+        <div>
+            <div class="eyebrow">Yönetim Paneli</div>
+            <h1>Katalog Yönetimi</h1>
+        </div>
+        <a href="/Admin/Ekle" class="btn btn-dark rounded-pill px-4">Yeni İçerik Ekle</a>
+    </div>
+</section>
+
+<section class="surface-panel admin-table-card mt-4">
+    @if (Model.Count == 0)
+    {
+        <div class="empty-state">
+            <h3>Listelenecek içerik yok</h3>
+            <p>Yeni kayıt ekleyerek kataloğu oluşturmaya başlayabilirsin.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table align-middle admin-table">
+                <thead>
+                    <tr>
+                        <th>Görsel</th>
+                        <th>Başlık</th>
+                        <th>Tür</th>
+                        <th>Kategori</th>
+                        <th>Yorum</th>
+                        <th class="text-end">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        var hasPoster = !string.IsNullOrWhiteSpace(item.ResimYolu);
+
+                        <tr>
+                            <td>
+                                @if (hasPoster)
+                                {
+                                    <img src="@Url.Content($"~/img/afisler/{item.ResimYolu}")" alt="@item.Baslik afişi" class="admin-thumb" />
+                                }
+                                else
+                                {
+                                    <div class="admin-thumb admin-thumb--placeholder">@item.Tur.ToString()[0]</div>
+                                }
+                            </td>
+                            <td class="fw-semibold">@item.Baslik</td>
+                            <td><span class="soft-badge">@item.Tur</span></td>
+                            <td>@(string.IsNullOrWhiteSpace(item.Kategori) ? "-" : item.Kategori)</td>
+                            <td>@item.Yorumlar.Count</td>
+                            <td class="text-end">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a href="/Admin/Duzenle/@item.Id" class="btn btn-sm btn-outline-dark rounded-pill px-3">Düzenle</a>
+                                    <form asp-action="Sil" method="post" onsubmit="return confirm('Bu içeriği silmek istediğine emin misin?')">
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">Sil</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

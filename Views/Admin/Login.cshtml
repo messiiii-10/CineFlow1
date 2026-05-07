@@ -1,0 +1,30 @@
+@model CineFlow.Models.ViewModels.AdminLogin
+
+<section class="auth-shell auth-shell--compact">
+    <div class="auth-copy">
+        <div class="eyebrow">Yönetim Erişimi</div>
+        <h1>Katalog yönetimi, içerik güncelleme ve moderasyon işlemleri için admin oturumu aç.</h1>
+        <p>Admin paneli içerik CRUD akışını tek ekranda toplar.</p>
+    </div>
+
+    <div class="form-card">
+        <h2>Admin Girişi</h2>
+        <form asp-action="Login" method="post" novalidate>
+            <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label"></label>
+                <input asp-for="Email" class="form-control form-control-lg" placeholder="yonetici@kurum.com" />
+                <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-4">
+                <label asp-for="Password" class="form-label"></label>
+                <input asp-for="Password" class="form-control form-control-lg" placeholder="Şifreniz" />
+                <span asp-validation-for="Password" class="text-danger small"></span>
+            </div>
+
+            <button type="submit" class="btn btn-dark w-100 rounded-pill py-3">Panele Gir</button>
+        </form>
+    </div>
+</section>

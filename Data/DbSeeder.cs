@@ -1,6 +1,7 @@
 using CineFlow.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using System.Data;
 
 namespace CineFlow.Data
 {
@@ -9,6 +10,8 @@ namespace CineFlow.Data
         public static async Task SeedAsync(AppDbContext dbContext, string contentRootPath)
         {
             await dbContext.Database.EnsureCreatedAsync();
+            await EnsureUserLibrarySchemaAsync(dbContext);
+            await EnsureUserProfileSchemaAsync(dbContext);
 
             if (!await dbContext.Adminler.AnyAsync())
             {
@@ -36,6 +39,61 @@ namespace CineFlow.Data
             await EnsureSeriesCatalogAsync(dbContext);
 
             await dbContext.SaveChangesAsync();
+        }
+
+        private static async Task EnsureUserLibrarySchemaAsync(AppDbContext dbContext)
+        {
+            const string createTableSql = """
+                CREATE TABLE IF NOT EXISTS "KullaniciIcerikKayitlari" (
+                    "Id" INTEGER NOT NULL CONSTRAINT "PK_KullaniciIcerikKayitlari" PRIMARY KEY AUTOINCREMENT,
+                    "KullaniciEmail" TEXT NOT NULL,
+                    "IcerikId" INTEGER NOT NULL,
+                    "Durum" INTEGER NOT NULL,
+                    "KisiselPuan" INTEGER NULL,
+                    "OlusturmaTarihi" TEXT NOT NULL,
+                    "GuncellemeTarihi" TEXT NOT NULL,
+                    CONSTRAINT "FK_KullaniciIcerikKayitlari_Icerikler_IcerikId" FOREIGN KEY ("IcerikId") REFERENCES "Icerikler" ("Id") ON DELETE CASCADE
+                );
+                """;
+
+            const string createIndexSql = """
+                CREATE UNIQUE INDEX IF NOT EXISTS "IX_KullaniciIcerikKayitlari_KullaniciEmail_IcerikId"
+                ON "KullaniciIcerikKayitlari" ("KullaniciEmail", "IcerikId");
+                """;
+
+            await dbContext.Database.ExecuteSqlRawAsync(createTableSql);
+            await dbContext.Database.ExecuteSqlRawAsync(createIndexSql);
+        }
+
+        private static async Task EnsureUserProfileSchemaAsync(AppDbContext dbContext)
+        {
+            var connection = dbContext.Database.GetDbConnection();
+            var shouldClose = connection.State != ConnectionState.Open;
+
+            if (shouldClose)
+                await connection.OpenAsync();
+
+            try
+            {
+                var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                await using var pragmaCommand = connection.CreateCommand();
+                pragmaCommand.CommandText = "PRAGMA table_info(\"Kullanicilar\");";
+
+                await using var reader = await pragmaCommand.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                    columns.Add(reader.GetString(1));
+
+                if (!columns.Contains("ProfilResmiYolu"))
+                    await dbContext.Database.ExecuteSqlRawAsync("ALTER TABLE \"Kullanicilar\" ADD COLUMN \"ProfilResmiYolu\" TEXT NULL;");
+
+                if (!columns.Contains("Biyografi"))
+                    await dbContext.Database.ExecuteSqlRawAsync("ALTER TABLE \"Kullanicilar\" ADD COLUMN \"Biyografi\" TEXT NULL;");
+            }
+            finally
+            {
+                if (shouldClose)
+                    await connection.CloseAsync();
+            }
         }
 
         private static Task EnsureSeriesCatalogAsync(AppDbContext dbContext)

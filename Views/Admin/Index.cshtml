@@ -1,4 +1,4 @@
-@model List<CineFlow.Models.Icerik>
+@model CineFlow.Models.ViewModels.AdminIndexViewModel
 
 <section class="page-intro mt-4">
     <div class="section-heading">
@@ -11,11 +11,38 @@
 </section>
 
 <section class="surface-panel admin-table-card mt-4">
-    @if (Model.Count == 0)
+    <div class="admin-toolbar">
+        <form method="get" asp-action="Index" class="admin-search-form">
+            <label for="q" class="visually-hidden">İçerik ara</label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input id="q" name="q" value="@Model.Arama" class="form-control" placeholder="Başlık, kategori veya yaratıcı ara" />
+                <button type="submit" class="btn btn-dark px-4">Ara</button>
+            </div>
+        </form>
+
+        <div class="admin-toolbar__meta">
+            @if (Model.AramaVar)
+            {
+                <span><strong>@Model.SonucSayisi</strong> sonuç bulundu</span>
+                <a href="/Admin/Index" class="btn btn-sm btn-outline-dark rounded-pill px-3">Temizle</a>
+            }
+            else
+            {
+                <span>Toplam <strong>@Model.ToplamIcerik</strong> içerik</span>
+            }
+        </div>
+    </div>
+
+    @if (Model.Icerikler.Count == 0)
     {
         <div class="empty-state">
-            <h3>Listelenecek içerik yok</h3>
-            <p>Yeni kayıt ekleyerek kataloğu oluşturmaya başlayabilirsin.</p>
+            <h3>@(Model.AramaVar ? "Aramana uygun içerik bulunamadı" : "Listelenecek içerik yok")</h3>
+            <p>
+                @(Model.AramaVar
+                    ? "Farklı bir başlık, kategori ya da yaratıcı adı deneyebilirsin."
+                    : "Yeni kayıt ekleyerek kataloğu oluşturmaya başlayabilirsin.")
+            </p>
         </div>
     }
     else
@@ -33,7 +60,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var item in Model)
+                    @foreach (var item in Model.Icerikler)
                     {
                         var hasPoster = !string.IsNullOrWhiteSpace(item.ResimYolu);
 

@@ -13,6 +13,7 @@ namespace CineFlow.Data
         public DbSet<Yorum> Yorumlar => Set<Yorum>();
         public DbSet<Kullanici> Kullanicilar => Set<Kullanici>();
         public DbSet<Admin> Adminler => Set<Admin>();
+        public DbSet<KullaniciIcerikKaydi> KullaniciIcerikKayitlari => Set<KullaniciIcerikKaydi>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -37,6 +38,16 @@ namespace CineFlow.Data
             modelBuilder.Entity<Icerik>()
                 .HasMany(x => x.Yorumlar)
                 .WithOne(x => x.Icerik!)
+                .HasForeignKey(x => x.IcerikId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<KullaniciIcerikKaydi>()
+                .HasIndex(x => new { x.KullaniciEmail, x.IcerikId })
+                .IsUnique();
+
+            modelBuilder.Entity<KullaniciIcerikKaydi>()
+                .HasOne(x => x.Icerik)
+                .WithMany()
                 .HasForeignKey(x => x.IcerikId)
                 .OnDelete(DeleteBehavior.Cascade);
         }

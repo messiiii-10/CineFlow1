@@ -17,12 +17,20 @@
         var adminEmail = Context.Session.GetString("AdminEmail");
         var isAdmin = Context.Session.GetString("AdminAuth") == "true";
         var currentUser = Context.Session.GetString("User");
+        var isAuthenticated = isAdmin || !string.IsNullOrWhiteSpace(currentUser);
+        var currentPath = Context.Request.Path.Value ?? "/";
+        var currentProfileSection = (Context.Request.Query["section"].ToString() ?? string.Empty).Trim().ToLowerInvariant();
+        var profileRouteActive = currentPath.StartsWith("/Home/Profil", StringComparison.OrdinalIgnoreCase);
+        var catalogRouteActive = currentPath == "/" || currentPath.StartsWith("/Home/Detay", StringComparison.OrdinalIgnoreCase);
+        var loginRouteActive = currentPath.StartsWith("/Home/Login", StringComparison.OrdinalIgnoreCase);
+        var registerRouteActive = currentPath.StartsWith("/Home/Kayit", StringComparison.OrdinalIgnoreCase);
+        var adminRouteActive = currentPath.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase);
     }
     <header>
         <nav class="navbar navbar-expand-lg app-nav">
             <div class="container">
                 <a class="navbar-brand brand-mark" href="/">
-                    <span class="brand-mark__glyph">CF</span>
+                    <span class="brand-mark__glyph"><i class="bi bi-film"></i></span>
                     <span>CineFlow</span>
                 </a>
 
@@ -43,7 +51,7 @@
                         @if (isAdmin)
                         {
                             <li class="nav-item">
-                                <span class="chip chip-danger"><i class="bi bi-shield-lock me-1"></i>@adminEmail</span>
+                                <a class="chip chip-danger chip--link" href="/Home/Profil"><i class="bi bi-shield-lock me-1"></i>@adminEmail</a>
                             </li>
                             <li class="nav-item">
                                 <a class="btn btn-sm btn-outline-light rounded-pill px-3" href="/Admin/Index">Panel</a>
@@ -55,7 +63,7 @@
                         else if (!string.IsNullOrWhiteSpace(currentUser))
                         {
                             <li class="nav-item">
-                                <span class="chip"><i class="bi bi-person-circle me-1"></i>@currentUser</span>
+                                <a class="chip chip--link" href="/Home/Profil"><i class="bi bi-person-circle me-1"></i>@currentUser</a>
                             </li>
                             <li class="nav-item">
                                <a class="btn btn-sm btn-outline-light rounded-pill px-3" href="/Home/Logout">Çıkış Yap</a>
@@ -69,9 +77,7 @@
                             <li class="nav-item">
                                 <a class="btn btn-sm btn-light rounded-pill px-3" href="/Home/Kayit">Kayıt Ol</a>
                             </li>
-                            <li class="nav-item">
-                                <a class="btn btn-sm btn-outline-light rounded-pill px-3" href="/Admin/Login">Admin</a>
-                            </li>
+                            
                         }
                     </ul>
                 </div>
@@ -79,7 +85,54 @@
         </nav>
     </header>
 
-    <div class="container pb-5">
+    <aside class="quick-rail" aria-label="Hızlı sekmeler">
+        <div class="quick-rail__stack">
+            <a class="quick-rail__item @(catalogRouteActive ? "is-active" : null)" href="/">
+                <i class="bi bi-house-door"></i>
+                <span>Ana Sayfa</span>
+            </a>
+
+            @if (isAuthenticated)
+            {
+                <a class="quick-rail__item @(profileRouteActive && (string.IsNullOrWhiteSpace(currentProfileSection) || currentProfileSection == "overview") ? "is-active" : null)" href="/Home/Profil?section=overview">
+                    <i class="bi bi-person-circle"></i>
+                    <span>Profil</span>
+                </a>
+                <a class="quick-rail__item @(profileRouteActive && currentProfileSection == "favorites" ? "is-active" : null)" href="/Home/Profil?section=favorites">
+                    <i class="bi bi-stars"></i>
+                    <span>Favoriler</span>
+                </a>
+                <a class="quick-rail__item @(profileRouteActive && currentProfileSection == "library" ? "is-active" : null)" href="/Home/Profil?section=library">
+                    <i class="bi bi-collection-play"></i>
+                    <span>Kütüphane</span>
+                </a>
+                <a class="quick-rail__item @(profileRouteActive && currentProfileSection == "history" ? "is-active" : null)" href="/Home/Profil?section=history">
+                    <i class="bi bi-clock-history"></i>
+                    <span>Geçmiş</span>
+                </a>
+                @if (isAdmin)
+                {
+                    <a class="quick-rail__item @(adminRouteActive ? "is-active" : null)" href="/Admin/Index">
+                        <i class="bi bi-shield-lock"></i>
+                        <span>Yönetim</span>
+                    </a>
+                }
+            }
+            else
+            {
+                <a class="quick-rail__item @(loginRouteActive ? "is-active" : null)" href="/Home/Login">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    <span>Giriş</span>
+                </a>
+                <a class="quick-rail__item @(registerRouteActive ? "is-active" : null)" href="/Home/Kayit">
+                    <i class="bi bi-person-plus"></i>
+                    <span>Kayıt</span>
+                </a>
+            }
+        </div>
+    </aside>
+
+    <div class="container app-content pb-5">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>

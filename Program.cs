@@ -1,10 +1,15 @@
 using CineFlow.Data;
+using CineFlow.Configuration;
+using CineFlow.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.Configure<FirebaseSettings>(builder.Configuration.GetSection("Firebase"));
+builder.Services.AddHttpClient();
+builder.Services.AddSingleton<FirebaseIdentityService>();
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {

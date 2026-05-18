@@ -16,6 +16,12 @@ namespace CineFlow.Models
 
         [Required(ErrorMessage = "Şifre zorunludur.")]
         public string Password { get; set; } = string.Empty;
+
+        [StringLength(260)]
+        public string? ProfilResmiYolu { get; set; }
+
+        [StringLength(280)]
+        public string? Biyografi { get; set; }
     }
 }
 

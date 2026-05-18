@@ -7,3 +7,5 @@ cineflow.db
 cineflow.db-shm
 cineflow.db-wal
 *.vsix
+secrets/
+*-firebase-adminsdk-*.json

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System;
 using CineFlow.Models.ViewModels;
 using Microsoft.EntityFrameworkCore;
+using CineFlow.Services;
 
 namespace CineFlow.Controllers
 {
@@ -14,22 +15,30 @@ namespace CineFlow.Controllers
     {
         private readonly IWebHostEnvironment _env;
         private readonly AppDbContext _dbContext;
+        private readonly FirebaseIdentityService _firebaseIdentityService;
 
-        public AdminController(IWebHostEnvironment env, AppDbContext dbContext)
+        public AdminController(IWebHostEnvironment env, AppDbContext dbContext, FirebaseIdentityService firebaseIdentityService)
         {
             _env = env;
             _dbContext = dbContext;
+            _firebaseIdentityService = firebaseIdentityService;
         }
 
         private bool IsAdmin() => HttpContext.Session.GetString("AdminAuth") == "true";
 
         [HttpGet]
-        public IActionResult Login() => View(new AdminLogin());
+        public IActionResult Login()
+            => _firebaseIdentityService.IsEnabled
+                ? RedirectToAction("Login", "Home")
+                : View(new AdminLogin());
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(AdminLogin model)
         {
+            if (_firebaseIdentityService.IsEnabled)
+                return RedirectToAction("Login", "Home");
+
             if (!ModelState.IsValid)
                 return View(model);
 
@@ -46,25 +55,45 @@ namespace CineFlow.Controllers
             return RedirectToAction("Index");
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? q)
         {
-            if (!IsAdmin()) return RedirectToAction("Login");
+            if (!IsAdmin()) return RedirectToAction("Login", _firebaseIdentityService.IsEnabled ? "Home" : "Admin");
 
-            var icerikler = await _dbContext.Icerikler
+            var query = _dbContext.Icerikler
                 .Include(x => x.Yorumlar)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var pattern = $"%{q.Trim()}%";
+                query = query.Where(x =>
+                    EF.Functions.Like(x.Baslik, pattern) ||
+                    (x.AlternatifBaslik != null && EF.Functions.Like(x.AlternatifBaslik, pattern)) ||
+                    (x.OrijinalBaslik != null && EF.Functions.Like(x.OrijinalBaslik, pattern)) ||
+                    (x.Kategori != null && EF.Functions.Like(x.Kategori, pattern)) ||
+                    (x.Yaraticilar != null && EF.Functions.Like(x.Yaraticilar, pattern)));
+            }
+
+            var toplamIcerik = await _dbContext.Icerikler.CountAsync();
+            var icerikler = await query
                 .OrderBy(x => x.Baslik)
                 .ToListAsync();
 
-            return View(icerikler);
+            return View(new AdminIndexViewModel
+            {
+                Icerikler = icerikler,
+                Arama = q,
+                ToplamIcerik = toplamIcerik
+            });
         }
 
-        public IActionResult Ekle() => IsAdmin() ? View() : RedirectToAction("Login");
+        public IActionResult Ekle() => IsAdmin() ? View() : RedirectToAction("Login", _firebaseIdentityService.IsEnabled ? "Home" : "Admin");
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Ekle(Icerik model, IFormFile afis)
         {
-            if (!IsAdmin()) return RedirectToAction("Login");
+            if (!IsAdmin()) return RedirectToAction("Login", _firebaseIdentityService.IsEnabled ? "Home" : "Admin");
 
             if (!ModelState.IsValid)
                 return View(model);
@@ -85,7 +114,7 @@ namespace CineFlow.Controllers
 
         public async Task<IActionResult> Duzenle(int id) 
         {
-            if (!IsAdmin()) return RedirectToAction("Login");
+            if (!IsAdmin()) return RedirectToAction("Login", _firebaseIdentityService.IsEnabled ? "Home" : "Admin");
 
             var veri = await _dbContext.Icerikler.FirstOrDefaultAsync(x => x.Id == id);
             return veri != null ? View(veri) : RedirectToAction("Index");
@@ -95,7 +124,7 @@ namespace CineFlow.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Duzenle(Icerik model, IFormFile? afis)
         {
-            if (!IsAdmin()) return RedirectToAction("Login");
+            if (!IsAdmin()) return RedirectToAction("Login", _firebaseIdentityService.IsEnabled ? "Home" : "Admin");
 
             if (!ModelState.IsValid)
                 return View(model);
@@ -125,7 +154,7 @@ namespace CineFlow.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Sil(int id)
         {
-            if (!IsAdmin()) return RedirectToAction("Login");
+            if (!IsAdmin()) return RedirectToAction("Login", _firebaseIdentityService.IsEnabled ? "Home" : "Admin");
 
             var veri = await _dbContext.Icerikler.FirstOrDefaultAsync(x => x.Id == id);
             if (veri != null)

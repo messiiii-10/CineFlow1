@@ -4,6 +4,7 @@
 
 @{
     var currentUser = Context.Session.GetString("User");
+    var canTrack = Model.KutuphaneEtkilesimiAcik;
     var item = Model.Icerik;
     var hasPoster = !string.IsNullOrWhiteSpace(item.GorselKaynak);
     var hasBanner = !string.IsNullOrWhiteSpace(item.BannerKaynak);
@@ -55,6 +56,10 @@
                 <strong>@item.SkorEtiketi</strong>
             </div>
             <div>
+                <span class="stat-label">Topluluk Puanı</span>
+                <strong>@(Model.OrtalamaKullaniciPuani.HasValue ? $"{Model.OrtalamaKullaniciPuani.Value:F1}/10" : "-")</strong>
+            </div>
+            <div>
                 <span class="stat-label">Popülerlik</span>
                 <strong>@item.PopulerlikEtiketi</strong>
             </div>
@@ -65,6 +70,10 @@
             <div>
                 <span class="stat-label">Yorum</span>
                 <strong>@item.Yorumlar.Count</strong>
+            </div>
+            <div>
+                <span class="stat-label">Puanlayan</span>
+                <strong>@Model.PuanlayanKullaniciSayisi</strong>
             </div>
         </div>
 
@@ -126,6 +135,73 @@
             </div>
         }
     </div>
+</section>
+
+<section class="surface-panel mt-4">
+    <div class="section-heading mb-4">
+        <div>
+            <div class="eyebrow">Kişisel Takip</div>
+            <h2>İzleme ve Puanlama</h2>
+        </div>
+        <p>İçeriği profiline ekle, durumunu güncelle ve puanını ver.</p>
+    </div>
+
+    @if (TempData["CollectionMessage"] is string collectionMessage)
+    {
+        <div class="alert alert-success">@collectionMessage</div>
+    }
+
+    @if (TempData["CollectionError"] is string collectionError)
+    {
+        <div class="alert alert-danger">@collectionError</div>
+    }
+
+    @if (canTrack)
+    {
+        <form asp-action="KutuphaneGuncelle" method="post" class="library-form">
+            <input type="hidden" name="icerikId" value="@item.Id" />
+
+            <div class="library-form__grid">
+                <div>
+                    <label class="form-label">Durum</label>
+                    <select name="durum" class="form-select">
+                        <option value="@((int)KullaniciIcerikDurumu.Planliyor)" selected="@(Model.KullaniciKaydi?.Durum == KullaniciIcerikDurumu.Planliyor ? "selected" : null)">Listemde</option>
+                        <option value="@((int)KullaniciIcerikDurumu.Izliyor)" selected="@(Model.KullaniciKaydi?.Durum == KullaniciIcerikDurumu.Izliyor ? "selected" : null)">İzliyorum</option>
+                        <option value="@((int)KullaniciIcerikDurumu.Tamamlandi)" selected="@(Model.KullaniciKaydi?.Durum == KullaniciIcerikDurumu.Tamamlandi ? "selected" : null)">Tamamladım</option>
+                        <option value="@((int)KullaniciIcerikDurumu.Birakti)" selected="@(Model.KullaniciKaydi?.Durum == KullaniciIcerikDurumu.Birakti ? "selected" : null)">Bıraktım</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Kişisel Puanın</label>
+                    <select name="kisiselPuan" class="form-select">
+                        <option value="">Puan verme</option>
+                        @for (var score = 1; score <= 10; score++)
+                        {
+                            <option value="@score" selected="@(Model.KullaniciKaydi?.KisiselPuan == score ? "selected" : null)">@score / 10</option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <div class="library-form__actions">
+                <button type="submit" class="btn btn-dark rounded-pill px-4">Profili Güncelle</button>
+            </div>
+        </form>
+
+        @if (Model.KullaniciKaydi != null)
+        {
+            <form asp-action="KutuphaneKaydiniSil" method="post" class="library-form__remove">
+                <input type="hidden" name="icerikId" value="@item.Id" />
+                <button type="submit" class="btn btn-outline-dark rounded-pill px-4">Listeden Kaldır</button>
+            </form>
+        }
+    }
+    else
+    {
+        <div class="alert alert-warning mb-0">
+            İçeriği profilinde takip etmek ve puan vermek için <a href="/Home/Login">giriş yap</a>.
+        </div>
+    }
 </section>
 
 <section class="surface-panel mt-4">

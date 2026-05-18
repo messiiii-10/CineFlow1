@@ -28,6 +28,14 @@ namespace CineFlow.Models
         [Range(1, 10, ErrorMessage = "Puan 1 ile 10 arasında olmalıdır.")]
         public int? KisiselPuan { get; set; }
 
+        public bool KutuphanedeMi { get; set; } = true;
+
+        public bool FavoriMi { get; set; }
+
+        public DateTime? SonZiyaretTarihi { get; set; }
+
+        public int ZiyaretSayisi { get; set; }
+
         public DateTime OlusturmaTarihi { get; set; } = DateTime.UtcNow;
 
         public DateTime GuncellemeTarihi { get; set; } = DateTime.UtcNow;

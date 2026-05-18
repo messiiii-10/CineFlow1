@@ -34,7 +34,12 @@
     <div>
         @if (hasPoster)
         {
-            <img src="@item.GorselKaynak" alt="@item.Baslik afişi" class="detail-poster" />
+            <div class="media-frame media-frame--detail" data-media-frame>
+                <img src="@item.GorselKaynak" alt="@item.Baslik afişi" class="detail-poster media-frame__image" data-fallback-image />
+                <div class="detail-placeholder media-frame__fallback" data-media-fallback hidden>
+                    <span>@item.TurEtiketi</span>
+                </div>
+            </div>
         }
         else
         {
@@ -184,15 +189,23 @@
             </div>
 
             <div class="library-form__actions">
-                <button type="submit" class="btn btn-dark rounded-pill px-4">Profili Güncelle</button>
+                <button type="submit" class="btn btn-dark rounded-pill px-4">İzleme Listesini Güncelle</button>
             </div>
         </form>
 
-        @if (Model.KullaniciKaydi != null)
+        <form asp-action="FavoriDurumunuDegistir" method="post" class="library-form__remove">
+            <input type="hidden" name="icerikId" value="@item.Id" />
+            <input type="hidden" name="favoriMi" value="@(Model.KullaniciKaydi?.FavoriMi == true ? "false" : "true")" />
+            <button type="submit" class="btn btn-outline-dark rounded-pill px-4">
+                @(Model.KullaniciKaydi?.FavoriMi == true ? "Favoriden Çıkar" : "Favorilere Ekle")
+            </button>
+        </form>
+
+        @if (Model.KullaniciKaydi?.KutuphanedeMi == true)
         {
             <form asp-action="KutuphaneKaydiniSil" method="post" class="library-form__remove">
                 <input type="hidden" name="icerikId" value="@item.Id" />
-                <button type="submit" class="btn btn-outline-dark rounded-pill px-4">Listeden Kaldır</button>
+                <button type="submit" class="btn btn-outline-dark rounded-pill px-4">İzleme Listesinden Kaldır</button>
             </form>
         }
     }
@@ -234,7 +247,7 @@
         </div>
     }
 
-    @if (item.Yorumlar.Count == 0)
+    @if (Model.Yorumlar.Count == 0)
     {
         <div class="empty-state">
             <h3>Henüz yorum yok</h3>
@@ -244,11 +257,21 @@
     else
     {
         <div class="comment-list">
-            @foreach (var y in item.Yorumlar.OrderByDescending(x => x.Tarih))
+            @foreach (var y in Model.Yorumlar)
             {
                 <article class="comment-card">
                     <div class="comment-card__head">
-                        <strong>@y.KullaniciAdi</strong>
+                        <div class="comment-card__identity">
+                            @if (!string.IsNullOrWhiteSpace(y.ProfilResmiKaynak))
+                            {
+                                <img src="@y.ProfilResmiKaynak" alt="@y.KullaniciAdi profil resmi" class="comment-card__avatar comment-card__avatar--image" />
+                            }
+                            else
+                            {
+                                <div class="comment-card__avatar">@y.Monogram</div>
+                            }
+                            <strong>@y.KullaniciAdi</strong>
+                        </div>
                         <span>@y.Tarih.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</span>
                     </div>
                     <p>@y.Mesaj</p>
@@ -273,7 +296,14 @@
                 <a class="related-card" href="/Home/Detay/@benzer.Id">
                     @if (!string.IsNullOrWhiteSpace(benzer.GorselKaynak))
                     {
-                        <img src="@benzer.GorselKaynak" alt="@benzer.Baslik" />
+                        <div class="media-frame" data-media-frame>
+                            <img src="@benzer.GorselKaynak" alt="@benzer.Baslik" class="media-frame__image" data-fallback-image />
+                            <div class="profile-library__placeholder media-frame__fallback" data-media-fallback hidden>@benzer.TurEtiketi</div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="profile-library__placeholder">@benzer.TurEtiketi</div>
                     }
                     <div>
                         <strong>@benzer.Baslik</strong>

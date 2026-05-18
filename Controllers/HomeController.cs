@@ -115,15 +115,35 @@ namespace CineFlow.Controllers
                 .ToListAsync();
 
             var currentEmail = GetCurrentEmail();
+            if (!string.IsNullOrWhiteSpace(currentEmail))
+                await RecordVisitAsync(currentEmail, id);
+
             var kullaniciKaydi = string.IsNullOrWhiteSpace(currentEmail)
                 ? null
                 : await _dbContext.KullaniciIcerikKayitlari
                     .AsNoTracking()
                     .FirstOrDefaultAsync(x => x.KullaniciEmail == currentEmail && x.IcerikId == id);
 
+            var yorumKullanicilari = icerik.Yorumlar
+                .Select(x => x.KullaniciAdi)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var avatarLookup = yorumKullanicilari.Count == 0
+                ? new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase)
+                : (await _dbContext.Kullanicilar
+                    .AsNoTracking()
+                    .Where(x => yorumKullanicilari.Contains(x.KullaniciAdi))
+                    .Select(x => new { x.KullaniciAdi, x.ProfilResmiYolu })
+                    .ToListAsync())
+                    .ToDictionary(
+                        x => x.KullaniciAdi,
+                        x => BuildAvatarPath(x.ProfilResmiYolu),
+                        StringComparer.OrdinalIgnoreCase);
+
             var puanBilgisi = await _dbContext.KullaniciIcerikKayitlari
                 .AsNoTracking()
-                .Where(x => x.IcerikId == id && x.KisiselPuan.HasValue)
+                .Where(x => x.IcerikId == id && x.KutuphanedeMi && x.KisiselPuan.HasValue)
                 .GroupBy(x => 1)
                 .Select(x => new
                 {
@@ -137,6 +157,16 @@ namespace CineFlow.Controllers
                 Icerik = icerik,
                 BenzerIcerikler = benzerler,
                 KullaniciKaydi = kullaniciKaydi,
+                Yorumlar = icerik.Yorumlar
+                    .OrderByDescending(x => x.Tarih)
+                    .Select(x => new IcerikCommentViewModel
+                    {
+                        KullaniciAdi = x.KullaniciAdi,
+                        Mesaj = x.Mesaj,
+                        Tarih = x.Tarih,
+                        ProfilResmiKaynak = avatarLookup.TryGetValue(x.KullaniciAdi, out var avatar) ? avatar : null
+                    })
+                    .ToList(),
                 OrtalamaKullaniciPuani = puanBilgisi?.Ortalama,
                 PuanlayanKullaniciSayisi = puanBilgisi?.Sayi ?? 0,
                 KutuphaneEtkilesimiAcik = !string.IsNullOrWhiteSpace(currentEmail)
@@ -180,11 +210,30 @@ namespace CineFlow.Controllers
                     .OrderByDescending(x => x.GuncellemeTarihi)
                     .ToListAsync();
 
-            var puanliKayitlar = kutuphaneKayitlari
+            var listeKayitlari = kutuphaneKayitlari
+                .Where(x => x.KutuphanedeMi && x.Icerik != null)
+                .ToList();
+
+            var puanliKayitlar = listeKayitlari
                 .Where(x => x.KisiselPuan.HasValue)
                 .ToList();
 
+            var favoriKayitlari = kutuphaneKayitlari
+                .Where(x => x.FavoriMi && x.Icerik != null)
+                .OrderByDescending(x => x.SonZiyaretTarihi ?? x.GuncellemeTarihi)
+                .ToList();
+
+            var sonZiyaretKayitlari = kutuphaneKayitlari
+                .Where(x => x.SonZiyaretTarihi.HasValue && x.Icerik != null)
+                .OrderByDescending(x => x.SonZiyaretTarihi)
+                .ToList();
+
             var normalizedSection = NormalizeProfileSection(section);
+            var sonAktivite = yorumlar
+                .Select(x => (DateTime?)x.Tarih)
+                .Concat(sonZiyaretKayitlari.Select(x => x.SonZiyaretTarihi))
+                .OrderByDescending(x => x)
+                .FirstOrDefault();
 
             var model = new UserProfileViewModel
             {
@@ -197,11 +246,13 @@ namespace CineFlow.Controllers
                     .Select(x => x.IcerikId)
                     .Distinct()
                     .Count(),
-                KutuphaneKaydiSayisi = kutuphaneKayitlari.Count,
+                KutuphaneKaydiSayisi = listeKayitlari.Count,
+                FavoriSayisi = favoriKayitlari.Count,
+                ZiyaretSayisi = sonZiyaretKayitlari.Count,
                 OrtalamaPuan = puanliKayitlar.Count > 0
                     ? puanliKayitlar.Average(x => x.KisiselPuan!.Value)
                     : null,
-                SonAktivite = yorumlar.FirstOrDefault()?.Tarih,
+                SonAktivite = sonAktivite,
                 ProfilResmiKaynak = BuildAvatarPath(kullanici?.ProfilResmiYolu),
                 Biyografi = kullanici?.Biyografi,
                 ActiveSection = normalizedSection,
@@ -215,52 +266,39 @@ namespace CineFlow.Controllers
                         Tarih = x.Tarih
                     })
                     .ToList(),
-                KutuphaneBolumleri = kutuphaneKayitlari
-                    .Where(x => x.Icerik != null)
-                    .GroupBy(x => x.Icerik!.Tur)
+                KutuphaneBolumleri = listeKayitlari
+                    .GroupBy(x => x.Durum)
                     .OrderBy(x => x.Key)
                     .Select(x => new UserProfileLibrarySectionViewModel
                     {
                         Baslik = x.Key switch
                         {
-                            IcerikTuru.Film => "Filmler",
-                            IcerikTuru.Dizi => "Diziler",
-                            IcerikTuru.Anime => "Animeler",
-                            IcerikTuru.Manga => "Mangalar",
+                            KullaniciIcerikDurumu.Planliyor => "İzleme Listem",
+                            KullaniciIcerikDurumu.Izliyor => "Şu Anda Takip Ettiklerim",
+                            KullaniciIcerikDurumu.Tamamlandi => "Tamamladıklarım",
+                            KullaniciIcerikDurumu.Birakti => "Bıraktıklarım",
                             _ => "Koleksiyon"
+                        },
+                        Aciklama = x.Key switch
+                        {
+                            KullaniciIcerikDurumu.Planliyor => "Sonra bakmak veya izlemek için ayırdıkların.",
+                            KullaniciIcerikDurumu.Izliyor => "Aktif olarak takip ettiğin başlıklar.",
+                            KullaniciIcerikDurumu.Tamamlandi => "Bitirdiğin ve arşivde tuttuğun içerikler.",
+                            KullaniciIcerikDurumu.Birakti => "Yarıda bıraktığın ama kaydını tutmak istediğin başlıklar.",
+                            _ => null
                         },
                         Icerikler = x
                             .OrderByDescending(y => y.GuncellemeTarihi)
-                            .Select(y => new UserProfileLibraryItemViewModel
-                            {
-                                IcerikId = y.IcerikId,
-                                Baslik = y.Icerik!.Baslik,
-                                TurEtiketi = y.Icerik.TurEtiketi,
-                                FormatEtiketi = y.Icerik.FormatEtiketi,
-                                DurumEtiketi = y.DurumEtiketi,
-                                GorselKaynak = y.Icerik.GorselKaynak,
-                                KisiselPuan = y.KisiselPuan,
-                                GuncellemeTarihi = y.GuncellemeTarihi
-                            })
+                            .Select(MapProfileLibraryItem)
                             .ToList()
                     })
                     .ToList(),
-                OneCikanIcerikler = kutuphaneKayitlari
-                    .Where(x => x.Icerik != null && x.KisiselPuan.HasValue)
-                    .OrderByDescending(x => x.KisiselPuan)
-                    .ThenByDescending(x => x.GuncellemeTarihi)
-                    .Take(4)
-                    .Select(x => new UserProfileLibraryItemViewModel
-                    {
-                        IcerikId = x.IcerikId,
-                        Baslik = x.Icerik!.Baslik,
-                        TurEtiketi = x.Icerik.TurEtiketi,
-                        FormatEtiketi = x.Icerik.FormatEtiketi,
-                        DurumEtiketi = x.DurumEtiketi,
-                        GorselKaynak = x.Icerik.GorselKaynak,
-                        KisiselPuan = x.KisiselPuan,
-                        GuncellemeTarihi = x.GuncellemeTarihi
-                    })
+                FavoriIcerikler = favoriKayitlari
+                    .Select(MapProfileLibraryItem)
+                    .ToList(),
+                SonZiyaretler = sonZiyaretKayitlari
+                    .Take(12)
+                    .Select(MapProfileLibraryItem)
                     .ToList()
             };
 
@@ -279,13 +317,13 @@ namespace CineFlow.Controllers
             if (kullanici is null)
             {
                 TempData["ProfileError"] = "Profil bilgisi bulunamadı.";
-                return RedirectToAction("Profil");
+                return RedirectToAction("Profil", new { section = "settings" });
             }
 
             if (biyografi != null && biyografi.Length > 280)
             {
                 TempData["ProfileError"] = "Biyografi en fazla 280 karakter olabilir.";
-                return RedirectToAction("Profil");
+                return RedirectToAction("Profil", new { section = "settings" });
             }
 
             if (profilResmi != null && profilResmi.Length > 0)
@@ -296,13 +334,13 @@ namespace CineFlow.Controllers
                 if (!allowedExtensions.Contains(extension))
                 {
                     TempData["ProfileError"] = "Profil resmi için JPG, PNG veya WEBP yükleyebilirsin.";
-                    return RedirectToAction("Profil");
+                    return RedirectToAction("Profil", new { section = "settings" });
                 }
 
                 if (profilResmi.Length > 5 * 1024 * 1024)
                 {
                     TempData["ProfileError"] = "Profil resmi en fazla 5 MB olabilir.";
-                    return RedirectToAction("Profil");
+                    return RedirectToAction("Profil", new { section = "settings" });
                 }
 
                 var uploadsDir = Path.Combine(_env.WebRootPath, "img", "avatars");
@@ -328,7 +366,7 @@ namespace CineFlow.Controllers
             await _dbContext.SaveChangesAsync();
 
             TempData["ProfileMessage"] = "Profilin güncellendi.";
-            return RedirectToAction("Profil");
+            return RedirectToAction("Profil", new { section = "settings" });
         }
 
         [HttpPost]
@@ -358,18 +396,20 @@ namespace CineFlow.Controllers
                 {
                     KullaniciEmail = currentEmail,
                     IcerikId = icerikId,
+                    KutuphanedeMi = true,
                     OlusturmaTarihi = DateTime.UtcNow
                 };
 
                 _dbContext.KullaniciIcerikKayitlari.Add(kayit);
             }
 
+            kayit.KutuphanedeMi = true;
             kayit.Durum = durum;
             kayit.KisiselPuan = kisiselPuan;
             kayit.GuncellemeTarihi = DateTime.UtcNow;
 
             await _dbContext.SaveChangesAsync();
-            TempData["CollectionMessage"] = "İçerik profil kütüphanene kaydedildi.";
+            TempData["CollectionMessage"] = "İçerik izleme listene kaydedildi.";
             return RedirectToAction("Detay", new { id = icerikId });
         }
 
@@ -386,11 +426,61 @@ namespace CineFlow.Controllers
 
             if (kayit != null)
             {
-                _dbContext.KullaniciIcerikKayitlari.Remove(kayit);
+                kayit.KutuphanedeMi = false;
+                kayit.KisiselPuan = null;
+
+                if (!kayit.FavoriMi && !kayit.SonZiyaretTarihi.HasValue && kayit.ZiyaretSayisi == 0)
+                    _dbContext.KullaniciIcerikKayitlari.Remove(kayit);
+
                 await _dbContext.SaveChangesAsync();
             }
 
-            TempData["CollectionMessage"] = "İçerik profilinden kaldırıldı.";
+            TempData["CollectionMessage"] = "İçerik izleme listesinden kaldırıldı.";
+            return RedirectToAction("Detay", new { id = icerikId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> FavoriDurumunuDegistir(int icerikId, bool favoriMi)
+        {
+            var currentEmail = GetCurrentEmail();
+            if (string.IsNullOrWhiteSpace(currentEmail))
+                return RedirectToAction("Login");
+
+            var icerikVar = await _dbContext.Icerikler.AnyAsync(x => x.Id == icerikId);
+            if (!icerikVar)
+                return NotFound();
+
+            var kayit = await _dbContext.KullaniciIcerikKayitlari
+                .FirstOrDefaultAsync(x => x.KullaniciEmail == currentEmail && x.IcerikId == icerikId);
+
+            if (kayit is null)
+            {
+                kayit = new KullaniciIcerikKaydi
+                {
+                    KullaniciEmail = currentEmail,
+                    IcerikId = icerikId,
+                    KutuphanedeMi = false,
+                    FavoriMi = favoriMi,
+                    OlusturmaTarihi = DateTime.UtcNow
+                };
+
+                _dbContext.KullaniciIcerikKayitlari.Add(kayit);
+            }
+            else
+            {
+                kayit.FavoriMi = favoriMi;
+            }
+
+            kayit.GuncellemeTarihi = DateTime.UtcNow;
+
+            if (!kayit.KutuphanedeMi && !kayit.FavoriMi && !kayit.SonZiyaretTarihi.HasValue && kayit.ZiyaretSayisi == 0)
+                _dbContext.KullaniciIcerikKayitlari.Remove(kayit);
+
+            await _dbContext.SaveChangesAsync();
+            TempData["CollectionMessage"] = favoriMi
+                ? "İçerik favorilerine eklendi."
+                : "İçerik favorilerinden çıkarıldı.";
             return RedirectToAction("Detay", new { id = icerikId });
         }
 
@@ -614,6 +704,48 @@ namespace CineFlow.Controllers
         private string? GetCurrentEmail()
             => HttpContext.Session.GetString("UserEmail") ?? HttpContext.Session.GetString("AdminEmail");
 
+        private static UserProfileLibraryItemViewModel MapProfileLibraryItem(KullaniciIcerikKaydi kayit)
+        {
+            return new UserProfileLibraryItemViewModel
+            {
+                IcerikId = kayit.IcerikId,
+                Baslik = kayit.Icerik?.Baslik ?? "İçerik",
+                TurEtiketi = kayit.Icerik?.TurEtiketi ?? "İçerik",
+                FormatEtiketi = kayit.Icerik?.FormatEtiketi ?? "Bilinmiyor",
+                DurumEtiketi = kayit.DurumEtiketi,
+                GorselKaynak = kayit.Icerik?.GorselKaynak,
+                KisiselPuan = kayit.KisiselPuan,
+                FavoriMi = kayit.FavoriMi,
+                YorumSayisi = kayit.Icerik?.Yorumlar.Count ?? 0,
+                SonZiyaretTarihi = kayit.SonZiyaretTarihi,
+                GuncellemeTarihi = kayit.GuncellemeTarihi
+            };
+        }
+
+        private async Task RecordVisitAsync(string currentEmail, int icerikId)
+        {
+            var kayit = await _dbContext.KullaniciIcerikKayitlari
+                .FirstOrDefaultAsync(x => x.KullaniciEmail == currentEmail && x.IcerikId == icerikId);
+
+            if (kayit is null)
+            {
+                kayit = new KullaniciIcerikKaydi
+                {
+                    KullaniciEmail = currentEmail,
+                    IcerikId = icerikId,
+                    KutuphanedeMi = false,
+                    OlusturmaTarihi = DateTime.UtcNow
+                };
+
+                _dbContext.KullaniciIcerikKayitlari.Add(kayit);
+            }
+
+            kayit.SonZiyaretTarihi = DateTime.UtcNow;
+            kayit.ZiyaretSayisi++;
+
+            await _dbContext.SaveChangesAsync();
+        }
+
         private static string? BuildAvatarPath(string? value)
         {
             if (string.IsNullOrWhiteSpace(value))
@@ -631,6 +763,7 @@ namespace CineFlow.Controllers
                 "favorites" => "favorites",
                 "library" => "library",
                 "history" => "history",
+                "settings" => "settings",
                 _ => "overview"
             };
         }

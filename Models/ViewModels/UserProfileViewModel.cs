@@ -16,6 +16,10 @@ namespace CineFlow.Models.ViewModels
 
         public int KutuphaneKaydiSayisi { get; set; }
 
+        public int FavoriSayisi { get; set; }
+
+        public int ZiyaretSayisi { get; set; }
+
         public double? OrtalamaPuan { get; set; }
 
         public DateTime? SonAktivite { get; set; }
@@ -30,7 +34,9 @@ namespace CineFlow.Models.ViewModels
 
         public List<UserProfileLibrarySectionViewModel> KutuphaneBolumleri { get; set; } = new();
 
-        public List<UserProfileLibraryItemViewModel> OneCikanIcerikler { get; set; } = new();
+        public List<UserProfileLibraryItemViewModel> FavoriIcerikler { get; set; } = new();
+
+        public List<UserProfileLibraryItemViewModel> SonZiyaretler { get; set; } = new();
 
         public string Monogram
         {
@@ -58,6 +64,8 @@ namespace CineFlow.Models.ViewModels
         public bool IsLibrarySection => ActiveSection == "library";
 
         public bool IsHistorySection => ActiveSection == "history";
+
+        public bool IsSettingsSection => ActiveSection == "settings";
     }
 
     public class UserProfileCommentViewModel
@@ -74,6 +82,8 @@ namespace CineFlow.Models.ViewModels
     public class UserProfileLibrarySectionViewModel
     {
         public string Baslik { get; set; } = string.Empty;
+
+        public string? Aciklama { get; set; }
 
         public List<UserProfileLibraryItemViewModel> Icerikler { get; set; } = new();
     }
@@ -93,6 +103,12 @@ namespace CineFlow.Models.ViewModels
         public string? GorselKaynak { get; set; }
 
         public int? KisiselPuan { get; set; }
+
+        public bool FavoriMi { get; set; }
+
+        public int YorumSayisi { get; set; }
+
+        public DateTime? SonZiyaretTarihi { get; set; }
 
         public DateTime GuncellemeTarihi { get; set; }
     }

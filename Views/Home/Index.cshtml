@@ -5,10 +5,11 @@
     var currentUser = Context.Session.GetString("User");
     var isAdmin = Context.Session.GetString("AdminAuth") == "true";
     var featured = Model.OneCikanIcerik;
+    var spotlightTags = Model.Kategoriler.Take(6).ToList();
 }
 
 <section class="hero-panel mt-4">
-    <div>
+    <div class="hero-panel__copy">
         <div class="eyebrow mb-3">Wiki Katalog</div>
         <h1>Popüler ve kült anime, manga ve dizileri tek yerde gez.</h1>
         <p class="lead-copy">CineFlow artık sadece anime odaklı değil; detaylı wiki sayfaları, arama sistemi ve geniş katalogla manga ve dizileri de aynı çatı altında topluyor.</p>
@@ -23,13 +24,54 @@
                 <a class="btn btn-outline-light rounded-pill px-4" href="/Home/Kayit">Topluluğa Katıl</a>
             }
         </div>
+
+        <div class="hero-panel__stats">
+            <article class="hero-panel__stat">
+                <span class="stat-label">Toplam Arşiv</span>
+                <strong>@Model.ToplamIcerik</strong>
+                <p>Wiki sayfası tek akışta.</p>
+            </article>
+            <article class="hero-panel__stat">
+                <span class="stat-label">Anime</span>
+                <strong>@Model.AnimeSayisi</strong>
+                <p>Popüler ve niş seçkiler.</p>
+            </article>
+            <article class="hero-panel__stat">
+                <span class="stat-label">Manga</span>
+                <strong>@Model.MangaSayisi</strong>
+                <p>Okuma odaklı arşiv.</p>
+            </article>
+            <article class="hero-panel__stat">
+                <span class="stat-label">Dizi</span>
+                <strong>@Model.DiziSayisi</strong>
+                <p>Ekranlık genişletilmiş katalog.</p>
+            </article>
+        </div>
+
+        @if (spotlightTags.Count > 0)
+        {
+            <div class="hero-panel__topics">
+                <span class="hero-panel__topics-label">Hızlı Konular</span>
+                <div class="tag-cloud">
+                    @foreach (var tag in spotlightTags)
+                    {
+                        <span class="soft-badge soft-badge--dark">@tag</span>
+                    }
+                </div>
+            </div>
+        }
     </div>
     @if (featured is not null)
     {
         <a class="hero-visual" href="/Home/Detay/@featured.Id">
             @if (!string.IsNullOrWhiteSpace(featured.GorselKaynak))
             {
-                <img src="@featured.GorselKaynak" alt="@featured.Baslik kapağı" />
+                <div class="media-frame media-frame--hero" data-media-frame>
+                    <img src="@featured.GorselKaynak" alt="@featured.Baslik kapağı" class="media-frame__image" data-fallback-image />
+                    <div class="poster-placeholder hero-visual__placeholder media-frame__fallback" data-media-fallback hidden>
+                        <span>@featured.TurEtiketi</span>
+                    </div>
+                </div>
             }
             else
             {
@@ -55,7 +97,7 @@
         <p>Filtreleri birlikte kullanıp katalogu daraltabilirsin.</p>
     </div>
 
-    <form method="get" asp-action="Index" class="search-form">
+    <form method="get" asp-action="Index" class="search-form" data-search-form data-scroll-target="arama">
         <div class="search-grid">
             <div>
                 <label class="form-label">Arama</label>
@@ -125,7 +167,12 @@
                 <article class="catalog-card">
                     @if (hasPoster)
                     {
-                        <img src="@item.GorselKaynak" alt="@item.Baslik afişi" class="poster-frame" />
+                        <div class="media-frame" data-media-frame>
+                            <img src="@item.GorselKaynak" alt="@item.Baslik afişi" class="poster-frame media-frame__image" data-fallback-image />
+                            <div class="poster-placeholder media-frame__fallback" data-media-fallback hidden>
+                                <span>@item.TurEtiketi</span>
+                            </div>
+                        </div>
                     }
                     else
                     {

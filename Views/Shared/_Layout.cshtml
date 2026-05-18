@@ -26,11 +26,10 @@
         var registerRouteActive = currentPath.StartsWith("/Home/Kayit", StringComparison.OrdinalIgnoreCase);
         var adminRouteActive = currentPath.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase);
     }
-    <header>
+    <header class="app-header">
         <nav class="navbar navbar-expand-lg app-nav">
-            <div class="container">
+            <div class="container-fluid app-nav__inner">
                 <a class="navbar-brand brand-mark" href="/">
-                    <span class="brand-mark__glyph"><i class="bi bi-film"></i></span>
                     <span>CineFlow</span>
                 </a>
 
@@ -38,15 +37,7 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
-                <div class="collapse navbar-collapse" id="mainNav">
-                    <ul class="navbar-nav me-auto mb-3 mb-lg-0 nav-pills-custom">
-                        <li class="nav-item"><a class="nav-link" href="/">Katalog</a></li>
-                        @if (isAdmin)
-                        {
-                            <li class="nav-item"><a class="nav-link" href="/Admin/Index">Yönetim</a></li>
-                        }
-                    </ul>
-
+                <div class="collapse navbar-collapse justify-content-end" id="mainNav">
                     <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
                         @if (isAdmin)
                         {
@@ -89,7 +80,7 @@
         <div class="quick-rail__stack">
             <a class="quick-rail__item @(catalogRouteActive ? "is-active" : null)" href="/">
                 <i class="bi bi-house-door"></i>
-                <span>Ana Sayfa</span>
+                <span>Katalog</span>
             </a>
 
             @if (isAuthenticated)
@@ -109,6 +100,10 @@
                 <a class="quick-rail__item @(profileRouteActive && currentProfileSection == "history" ? "is-active" : null)" href="/Home/Profil?section=history">
                     <i class="bi bi-clock-history"></i>
                     <span>Geçmiş</span>
+                </a>
+                <a class="quick-rail__item @(profileRouteActive && currentProfileSection == "settings" ? "is-active" : null)" href="/Home/Profil?section=settings">
+                    <i class="bi bi-sliders"></i>
+                    <span>Ayarlar</span>
                 </a>
                 @if (isAdmin)
                 {
@@ -132,20 +127,21 @@
         </div>
     </aside>
 
-    <div class="container app-content pb-5">
+    <div class="app-content pb-5">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
     </div>
 
     <footer class="footer-note">
-        <div class="container d-flex flex-column flex-md-row justify-content-between gap-2">
+        <div class="footer-note__inner d-flex flex-column flex-md-row justify-content-between gap-2">
             <span>CineFlow katalog, yorum ve yönetim akışını tek bir panelde toplar.</span>
             <span class="text-md-end">ASP.NET Core MVC demo uygulaması</span>
         </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
     @RenderSection("Scripts", required: false)
 </body>
 </html>

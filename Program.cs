@@ -23,7 +23,8 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await DbSeeder.SeedAsync(dbContext, app.Environment.ContentRootPath);
+    // Sunucu başlangıcında kilitlenmeyi önlemek için Task.Run ile güvenli çalıştırma
+    Task.Run(async () => await DbSeeder.SeedAsync(dbContext, app.Environment.ContentRootPath)).GetAwaiter().GetResult();
 }
 
 app.UseHttpsRedirection();

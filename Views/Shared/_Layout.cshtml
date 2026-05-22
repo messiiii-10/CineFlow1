@@ -1,10 +1,12 @@
 ﻿@using Microsoft.AspNetCore.Http
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CineFlow</title>
+    <link rel="icon" type="image/png" href="~/img/logo.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Source+Serif+4:wght@600;700&display=swap" rel="stylesheet" />
@@ -18,18 +20,13 @@
         var isAdmin = Context.Session.GetString("AdminAuth") == "true";
         var currentUser = Context.Session.GetString("User");
         var isAuthenticated = isAdmin || !string.IsNullOrWhiteSpace(currentUser);
-        var currentPath = Context.Request.Path.Value ?? "/";
-        var currentProfileSection = (Context.Request.Query["section"].ToString() ?? string.Empty).Trim().ToLowerInvariant();
-        var profileRouteActive = currentPath.StartsWith("/Home/Profil", StringComparison.OrdinalIgnoreCase);
-        var catalogRouteActive = currentPath == "/" || currentPath.StartsWith("/Home/Detay", StringComparison.OrdinalIgnoreCase);
-        var loginRouteActive = currentPath.StartsWith("/Home/Login", StringComparison.OrdinalIgnoreCase);
-        var registerRouteActive = currentPath.StartsWith("/Home/Kayit", StringComparison.OrdinalIgnoreCase);
-        var adminRouteActive = currentPath.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase);
+        var publicAdminEmail = Configuration["AdminContact:Email"] ?? "admin@gmail.com";
     }
-    <header class="app-header">
+    <header>
         <nav class="navbar navbar-expand-lg app-nav">
-            <div class="container-fluid app-nav__inner">
+            <div class="container">
                 <a class="navbar-brand brand-mark" href="/">
+                    <span class="brand-mark__glyph">CF</span>
                     <span>CineFlow</span>
                 </a>
 
@@ -37,12 +34,27 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
-                <div class="collapse navbar-collapse justify-content-end" id="mainNav">
+                <div class="collapse navbar-collapse" id="mainNav">
+                    <ul class="navbar-nav me-auto mb-3 mb-lg-0 nav-pills-custom">
+                        <li class="nav-item"><a class="nav-link" href="/">Katalog</a></li>
+                        @if (isAuthenticated)
+                        {
+                            <li class="nav-item"><a class="nav-link" href="/Home/Profil">Profil</a></li>
+                        }
+                        @if (isAdmin)
+                        {
+                            <li class="nav-item"><a class="nav-link" href="/Admin/Index">Yönetim</a></li>
+                        }
+                    </ul>
+
                     <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
                         @if (isAdmin)
                         {
                             <li class="nav-item">
-                                <a class="chip chip-danger chip--link" href="/Home/Profil"><i class="bi bi-shield-lock me-1"></i>@adminEmail</a>
+                                <span class="chip chip-danger"><i class="bi bi-shield-lock me-1"></i>@adminEmail</span>
+                            </li>
+                            <li class="nav-item">
+                                <a class="btn btn-sm btn-outline-light rounded-pill px-3" href="/Home/Profil">Profil</a>
                             </li>
                             <li class="nav-item">
                                 <a class="btn btn-sm btn-outline-light rounded-pill px-3" href="/Admin/Index">Panel</a>
@@ -54,7 +66,10 @@
                         else if (!string.IsNullOrWhiteSpace(currentUser))
                         {
                             <li class="nav-item">
-                                <a class="chip chip--link" href="/Home/Profil"><i class="bi bi-person-circle me-1"></i>@currentUser</a>
+                                <span class="chip"><i class="bi bi-person-circle me-1"></i>@currentUser</span>
+                            </li>
+                            <li class="nav-item">
+                               <a class="btn btn-sm btn-outline-light rounded-pill px-3" href="/Home/Profil">Profil</a>
                             </li>
                             <li class="nav-item">
                                <a class="btn btn-sm btn-outline-light rounded-pill px-3" href="/Home/Logout">Çıkış Yap</a>
@@ -68,80 +83,28 @@
                             <li class="nav-item">
                                 <a class="btn btn-sm btn-light rounded-pill px-3" href="/Home/Kayit">Kayıt Ol</a>
                             </li>
-                            
                         }
+                            
                     </ul>
                 </div>
             </div>
         </nav>
     </header>
 
-    <aside class="quick-rail" aria-label="Hızlı sekmeler">
-        <div class="quick-rail__stack">
-            <a class="quick-rail__item @(catalogRouteActive ? "is-active" : null)" href="/">
-                <i class="bi bi-house-door"></i>
-                <span>Katalog</span>
-            </a>
-
-            @if (isAuthenticated)
-            {
-                <a class="quick-rail__item @(profileRouteActive && (string.IsNullOrWhiteSpace(currentProfileSection) || currentProfileSection == "overview") ? "is-active" : null)" href="/Home/Profil?section=overview">
-                    <i class="bi bi-person-circle"></i>
-                    <span>Profil</span>
-                </a>
-                <a class="quick-rail__item @(profileRouteActive && currentProfileSection == "favorites" ? "is-active" : null)" href="/Home/Profil?section=favorites">
-                    <i class="bi bi-stars"></i>
-                    <span>Favoriler</span>
-                </a>
-                <a class="quick-rail__item @(profileRouteActive && currentProfileSection == "library" ? "is-active" : null)" href="/Home/Profil?section=library">
-                    <i class="bi bi-collection-play"></i>
-                    <span>Kütüphane</span>
-                </a>
-                <a class="quick-rail__item @(profileRouteActive && currentProfileSection == "history" ? "is-active" : null)" href="/Home/Profil?section=history">
-                    <i class="bi bi-clock-history"></i>
-                    <span>Geçmiş</span>
-                </a>
-                <a class="quick-rail__item @(profileRouteActive && currentProfileSection == "settings" ? "is-active" : null)" href="/Home/Profil?section=settings">
-                    <i class="bi bi-sliders"></i>
-                    <span>Ayarlar</span>
-                </a>
-                @if (isAdmin)
-                {
-                    <a class="quick-rail__item @(adminRouteActive ? "is-active" : null)" href="/Admin/Index">
-                        <i class="bi bi-shield-lock"></i>
-                        <span>Yönetim</span>
-                    </a>
-                }
-            }
-            else
-            {
-                <a class="quick-rail__item @(loginRouteActive ? "is-active" : null)" href="/Home/Login">
-                    <i class="bi bi-box-arrow-in-right"></i>
-                    <span>Giriş</span>
-                </a>
-                <a class="quick-rail__item @(registerRouteActive ? "is-active" : null)" href="/Home/Kayit">
-                    <i class="bi bi-person-plus"></i>
-                    <span>Kayıt</span>
-                </a>
-            }
-        </div>
-    </aside>
-
-    <div class="app-content pb-5">
+    <div class="container pb-5">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
     </div>
 
     <footer class="footer-note">
-        <div class="footer-note__inner d-flex flex-column flex-md-row justify-content-between gap-2">
+        <div class="container d-flex flex-column flex-md-row justify-content-between gap-2">
             <span>CineFlow katalog, yorum ve yönetim akışını tek bir panelde toplar.</span>
             <span class="text-md-end">ASP.NET Core MVC demo uygulaması</span>
         </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
     @RenderSection("Scripts", required: false)
 </body>
 </html>

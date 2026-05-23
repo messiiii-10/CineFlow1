@@ -4,16 +4,7 @@
     <div class="section-heading">
         <div>
             <div class="eyebrow">Profil</div>
-            <h1>
-                @(Model.ActiveSection switch
-                {
-                    "favorites" => "Favorilerin",
-                    "library" => "İzleme Listen",
-                    "history" => "Son Ziyaretlerin",
-                    "settings" => "Hesap Ayarların",
-                    _ => "Hesap Özeti"
-                })
-            </h1>
+            <h1>@Model.KullaniciAdi</h1>
         </div>
         <a href="/" class="btn btn-dark rounded-pill px-4">Kataloğa Dön</a>
     </div>
@@ -36,10 +27,6 @@
                 <p class="helper-copy mb-2">@Model.Email</p>
                 <div class="d-flex flex-wrap gap-2">
                     <span class="soft-badge">@(Model.IsAdmin ? "Yönetici" : "Topluluk Üyesi")</span>
-                    @if (Model.SonAktivite.HasValue)
-                    {
-                        <span class="soft-badge soft-badge--dark">Son aktivite @Model.SonAktivite.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</span>
-                    }
                 </div>
                 @if (!string.IsNullOrWhiteSpace(Model.Biyografi))
                 {
@@ -58,17 +45,17 @@
                 <strong>@Model.FavoriSayisi</strong>
             </div>
             <div>
-                <span class="stat-label">Son Ziyaret</span>
-                <strong>@Model.ZiyaretSayisi</strong>
+                <span class="stat-label">Yorum</span>
+                <strong>@Model.YorumSayisi</strong>
             </div>
         </div>
 
         <nav class="profile-switcher" aria-label="Profil sekmeleri">
-            <a class="profile-switcher__item @(Model.IsOverviewSection ? "is-active" : null)" href="/Home/Profil?section=overview">Genel Bakış</a>
-            <a class="profile-switcher__item @(Model.IsFavoritesSection ? "is-active" : null)" href="/Home/Profil?section=favorites">Favoriler</a>
-            <a class="profile-switcher__item @(Model.IsLibrarySection ? "is-active" : null)" href="/Home/Profil?section=library">İzleme Listesi</a>
-            <a class="profile-switcher__item @(Model.IsHistorySection ? "is-active" : null)" href="/Home/Profil?section=history">Geçmiş</a>
-            <a class="profile-switcher__item @(Model.IsSettingsSection ? "is-active" : null)" href="/Home/Profil?section=settings">Ayarlar</a>
+            <a class="profile-switcher__item @(Model.IsOverviewSection ? "is-active" : null)" data-section="overview" href="/Home/Profil?section=overview">Genel Bakış</a>
+            <a class="profile-switcher__item @(Model.IsFavoritesSection ? "is-active" : null)" data-section="favorites" href="/Home/Profil?section=favorites">Favoriler</a>
+            <a class="profile-switcher__item @(Model.IsLibrarySection ? "is-active" : null)" data-section="library" href="/Home/Profil?section=library">İzleme</a>
+            <a class="profile-switcher__item @(Model.IsHistorySection ? "is-active" : null)" data-section="history" href="/Home/Profil?section=history">Geçmiş</a>
+            <a class="profile-switcher__item @(Model.IsSettingsSection ? "is-active" : null)" data-section="settings" href="/Home/Profil?section=settings">Ayarlar</a>
         </nav>
 
         @if (Model.IsAdmin)
@@ -81,14 +68,221 @@
         else
         {
             <div class="cta-row">
-                <a href="/" class="btn btn-dark rounded-pill px-4">Yeni İçerik Keşfet</a>
+                <a href="/" class="btn btn-dark rounded-pill px-4">Keşfet</a>
                 <a href="/Home/Logout" class="btn btn-outline-dark rounded-pill px-4">Çıkış Yap</a>
             </div>
         }
     </article>
 
-    <article class="surface-panel">
+    <article class="surface-panel profile-content-area">
         @if (Model.IsOverviewSection)
+        {
+            <div class="section-heading mb-3">
+                <div>
+                    <div class="eyebrow">Genel Bakış</div>
+                    <h2>Profil Özeti</h2>
+                </div>
+            </div>
+
+            <div class="profile-summary-grid">
+                <div>
+                    <span class="stat-label">Yorum Yapılan İçerik</span>
+                    <strong>@Model.YorumYapilanIcerikSayisi</strong>
+                </div>
+                <div>
+                    <span class="stat-label">Toplam Yorum</span>
+                    <strong>@Model.YorumSayisi</strong>
+                </div>
+                <div>
+                    <span class="stat-label">Ortalama Puanım</span>
+                    <strong>@(Model.OrtalamaPuan.HasValue ? $"{Model.OrtalamaPuan.Value:F1}/10" : "-")</strong>
+                </div>
+            </div>
+
+            <div class="profile-feature-grid mt-4">
+                <section>
+                    <div class="section-heading mb-3">
+                        <div>
+                            <div class="eyebrow">Favoriler</div>
+                            <h3>Öne Çıkardıkların</h3>
+                        </div>
+                    </div>
+                    @if (Model.FavoriIcerikler.Count == 0)
+                    {
+                        <div class="empty-state">
+                            <h3>Henüz favori yok</h3>
+                            <p>İçerik detayında favori butonuna bas.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="profile-library__grid">
+                            @foreach (var k in Model.FavoriIcerikler.Take(6))
+                            {
+                                <a class="profile-library__card" href="/Home/Detay/@k.IcerikId">
+                                    @if (!string.IsNullOrWhiteSpace(k.GorselKaynak))
+                                    {
+                                        <img src="@k.GorselKaynak" alt="@k.Baslik" />
+                                    }
+                                    else
+                                    {
+                                        <div class="profile-library__placeholder">@k.TurEtiketi</div>
+                                    }
+                                    <div class="profile-library__body">
+                                        <strong>@k.Baslik</strong>
+                                    </div>
+                                </a>
+                            }
+                        </div>
+                    }
+                </section>
+
+                <section>
+                    <div class="section-heading mb-3">
+                        <div>
+                            <div class="eyebrow">Son Açtıkları</div>
+                            <h3>Geçmiş</h3>
+                        </div>
+                    </div>
+                    @if (Model.SonZiyaretler.Count == 0)
+                    {
+                        <div class="empty-state">
+                            <h3>Geçmiş boş</h3>
+                            <p>İçerik sayfası açtığında burada kalır.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="profile-library__grid">
+                            @foreach (var k in Model.SonZiyaretler.Take(6))
+                            {
+                                <a class="profile-library__card" href="/Home/Detay/@k.IcerikId">
+                                    @if (!string.IsNullOrWhiteSpace(k.GorselKaynak))
+                                    {
+                                        <img src="@k.GorselKaynak" alt="@k.Baslik" />
+                                    }
+                                    else
+                                    {
+                                        <div class="profile-library__placeholder">@k.TurEtiketi</div>
+                                    }
+                                    <div class="profile-library__body">
+                                        <strong>@k.Baslik</strong>
+                                    </div>
+                                </a>
+                            }
+                        </div>
+                    }
+                </section>
+            </div>
+        }
+        else if (Model.IsFavoritesSection)
+        {
+            <div class="section-heading mb-3">
+                <div>
+                    <div class="eyebrow">Favoriler</div>
+                    <h2>Favoriye Aldıkların</h2>
+                </div>
+            </div>
+            @if (Model.FavoriIcerikler.Count == 0)
+            {
+                <div class="empty-state">
+                    <h3>Favori yok</h3>
+                </div>
+            }
+            else
+            {
+                <div class="profile-library__grid">
+                    @foreach (var k in Model.FavoriIcerikler)
+                    {
+                        <a class="profile-library__card" href="/Home/Detay/@k.IcerikId">
+                            @if (!string.IsNullOrWhiteSpace(k.GorselKaynak))
+                            {
+                                <img src="@k.GorselKaynak" alt="@k.Baslik" />
+                            }
+                            else
+                            {
+                                <div class="profile-library__placeholder">@k.TurEtiketi</div>
+                            }
+                            <div class="profile-library__body">
+                                <strong>@k.Baslik</strong>
+                            </div>
+                        </a>
+                    }
+                </div>
+            }
+        }
+        else if (Model.IsHistorySection)
+        {
+            <div class="section-heading mb-3">
+                <div>
+                    <div class="eyebrow">Geçmiş</div>
+                    <h2>Son Ziyaret Ettiklerin</h2>
+                </div>
+            </div>
+            @if (Model.SonZiyaretler.Count == 0)
+            {
+                <div class="empty-state">
+                    <h3>Geçmiş boş</h3>
+                </div>
+            }
+            else
+            {
+                <div class="profile-library__grid">
+                    @foreach (var k in Model.SonZiyaretler)
+                    {
+                        <a class="profile-library__card" href="/Home/Detay/@k.IcerikId">
+                            @if (!string.IsNullOrWhiteSpace(k.GorselKaynak))
+                            {
+                                <img src="@k.GorselKaynak" alt="@k.Baslik" />
+                            }
+                            else
+                            {
+                                <div class="profile-library__placeholder">@k.TurEtiketi</div>
+                            }
+                            <div class="profile-library__body">
+                                <strong>@k.Baslik</strong>
+                            </div>
+                        </a>
+                    }
+                </div>
+            }
+        }
+        else if (Model.IsSettingsSection)
+        {
+            <div class="section-heading mb-3">
+                <div>
+                    <div class="eyebrow">Ayarlar</div>
+                    <h2>Profilini Düzenle</h2>
+                </div>
+            </div>
+
+            @if (TempData["ProfileMessage"] is string msg)
+            {
+                <div class="alert alert-success">@msg</div>
+            }
+
+            @if (Model.ProfiliDuzenleyebilir)
+            {
+                <div class="profile-editor">
+                    <form asp-action="ProfilGuncelle" method="post" enctype="multipart/form-data" class="profile-editor__form">
+                        <div class="form-group">
+                            <label class="form-label">Profil Resmi</label>
+                            <input type="file" name="profilResmi" class="form-control" accept=".jpg,.jpeg,.png,.webp" />
+                            <small class="form-text">Max 5 MB</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Biyografi</label>
+                            <textarea name="biyografi" class="form-control" rows="3" maxlength="280" placeholder="Kısa not...">@Model.Biyografi</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-dark rounded-pill px-4">Güncelle</button>
+                    </form>
+                </div>
+            }
+        }
+    </article>
+</section>
+
+@if (Model.IsOverviewSection)
         {
             <div class="section-heading mb-3">
                 <div>
@@ -458,3 +652,7 @@
         }
     </article>
 </section>
+
+@section Scripts {
+    <script src="~/js/profile.js"></script>
+}

@@ -42,17 +42,76 @@ namespace CineFlow.Services
             return adminEmail.Equals(email?.Trim(), StringComparison.OrdinalIgnoreCase);
         }
 
-        public Task<FirebaseAuthResult> SignInWithEmailPasswordAsync(string email, string password, CancellationToken cancellationToken = default)
-            => ExecuteAuthRequestAsync(
+        // 1. GİRİŞ YAPMA METODU
+        public async Task<FirebaseAuthResult> SignInWithEmailPasswordAsync(string email, string password, CancellationToken cancellationToken = default)
+        {
+            var result = await ExecuteAuthRequestAsync(
                 "accounts:signInWithPassword",
                 new FirebasePasswordRequest(email, password),
                 cancellationToken);
 
-        public Task<FirebaseAuthResult> RegisterWithEmailPasswordAsync(string email, string password, CancellationToken cancellationToken = default)
-            => ExecuteAuthRequestAsync(
+            if (!result.Succeeded || result.User == null)
+                return result;
+
+            try
+            {
+                var firebaseAuth = FirebaseAdmin.Auth.FirebaseAuth.DefaultInstance;
+                if (firebaseAuth is null)
+                    return FirebaseAuthResult.Failure("Firebase Admin SDK hazir degil.");
+
+                var userRecord = await firebaseAuth.GetUserAsync(result.User.Uid, cancellationToken);
+
+                if (!userRecord.EmailVerified)
+                {
+                    return FirebaseAuthResult.Failure("Giriş engellendi: E-posta adresiniz henüz doğrulanmamış. Lütfen gelen kutunuzdaki onay linkine tıklayın.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Kullanici e-posta onay durumu incelenirken hata olustu.");
+                return FirebaseAuthResult.Failure("Kullanici dogrulama kontrolü basarisiz oldu.");
+            }
+
+            return result;
+        }
+
+        // 2. KAYIT OLMA METODU
+        public async Task<FirebaseAuthResult> RegisterWithEmailPasswordAsync(string email, string password, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(email) || !email.EndsWith("@gmail.com", StringComparison.OrdinalIgnoreCase))
+            {
+                return FirebaseAuthResult.Failure("Sistemimize sadece gerçek @gmail.com adresleri ile kayıt olunabilir.");
+            }
+
+            var result = await ExecuteAuthRequestAsync(
                 "accounts:signUp",
                 new FirebasePasswordRequest(email, password),
                 cancellationToken);
+
+            if (!result.Succeeded || result.User == null)
+                return result;
+
+            try
+            {
+                var httpClient = _httpClientFactory.CreateClient(nameof(FirebaseIdentityService));
+                var mailPayload = new
+                {
+                    requestType = "VERIFY_EMAIL",
+                    idToken = result.IdToken
+                };
+
+                await httpClient.PostAsJsonAsync(
+                    $"https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key={_settings.ApiKey}",
+                    mailPayload,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Dogrulama e-postasi gonderilirken arka planda hata olustu.");
+            }
+
+            return result;
+        }
 
         private async Task<FirebaseAuthResult> ExecuteAuthRequestAsync(string endpoint, FirebasePasswordRequest payload, CancellationToken cancellationToken)
         {
@@ -81,7 +140,10 @@ namespace CineFlow.Services
                     return FirebaseAuthResult.Failure("Firebase yanitinda id token bulunamadi.");
 
                 var verifiedUser = await VerifyUserAsync(authResponse, cancellationToken);
-                return FirebaseAuthResult.Success(verifiedUser);
+                
+                var finalResult = FirebaseAuthResult.Success(verifiedUser);
+                finalResult.IdToken = authResponse.IdToken;
+                return finalResult;
             }
             catch (Exception ex)
             {
@@ -133,9 +195,7 @@ namespace CineFlow.Services
         private sealed class FirebaseAuthApiResponse
         {
             public string IdToken { get; set; } = string.Empty;
-
             public string LocalId { get; set; } = string.Empty;
-
             public string Email { get; set; } = string.Empty;
         }
 
@@ -154,8 +214,8 @@ namespace CineFlow.Services
 
     public sealed record FirebaseAuthResult(bool Succeeded, FirebaseAuthUser? User, string? ErrorMessage)
     {
+        public string IdToken { get; set; } = string.Empty;
         public static FirebaseAuthResult Success(FirebaseAuthUser user) => new(true, user, null);
-
         public static FirebaseAuthResult Failure(string message) => new(false, null, message);
     }
 }

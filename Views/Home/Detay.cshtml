@@ -26,7 +26,7 @@
         {
             <p class="wiki-subtitle">@item.AlternatifBaslik @(!string.IsNullOrWhiteSpace(item.AlternatifBaslik) && !string.IsNullOrWhiteSpace(item.OrijinalBaslik) ? "•" : "") @item.OrijinalBaslik</p>
         }
-        <p class="lead-copy mb-0">Popülerlik, yapım bilgisi, karakterler ve tür etiketleriyle zenginleştirilmiş detay sayfası.</p>
+        <p class="lead-copy mb-0">Popülerlik, yapım bilgisi, karakterler ve tür etiketleriyle zenginleştirilmiş Türkçe detay sayfası.</p>
     </div>
 </section>
 
@@ -36,14 +36,16 @@
         {
             <div class="media-frame media-frame--detail" data-media-frame>
                 <img src="@item.GorselKaynak" alt="@item.Baslik afişi" class="detail-poster media-frame__image" data-fallback-image />
-                <div class="detail-placeholder media-frame__fallback" data-media-fallback hidden>
+                <div class="detail-placeholder detail-placeholder--title media-frame__fallback" data-media-fallback hidden>
+                    <strong>@item.Baslik</strong>
                     <span>@item.TurEtiketi</span>
                 </div>
             </div>
         }
         else
         {
-            <div class="detail-placeholder">
+            <div class="detail-placeholder detail-placeholder--title">
+                <strong>@item.Baslik</strong>
                 <span>@item.TurEtiketi</span>
             </div>
         }
@@ -52,7 +54,7 @@
     <div class="surface-panel detail-copy">
         <div class="wiki-section">
             <div class="eyebrow">Özet</div>
-            <p class="detail-description">@item.Aciklama</p>
+            <p class="detail-description">@item.TurkceAciklama</p>
         </div>
 
         <div class="wiki-summary-grid">
@@ -89,8 +91,8 @@
             <div><span>Kaynak</span><strong>@item.KaynakEtiketi</strong></div>
             <div><span>Stüdyo / Yayıncı</span><strong>@(string.IsNullOrWhiteSpace(item.Studyo) ? "Bilinmiyor" : item.Studyo)</strong></div>
             <div><span>Yaratıcılar</span><strong>@(string.IsNullOrWhiteSpace(item.Yaraticilar) ? "Bilinmiyor" : item.Yaraticilar)</strong></div>
-            <div><span>Episode / Chapter</span><strong>@(item.BolumSayisi?.ToString() ?? "Bilinmiyor")</strong></div>
-            <div><span>Volume</span><strong>@(item.CiltSayisi?.ToString() ?? "-")</strong></div>
+            <div><span>Bölüm / Kısım</span><strong>@(item.BolumSayisi?.ToString() ?? "Bilinmiyor")</strong></div>
+            <div><span>Cilt</span><strong>@(item.CiltSayisi?.ToString() ?? "-")</strong></div>
             <div><span>Süre</span><strong>@(item.SureDakika is null ? "-" : $"{item.SureDakika} dk")</strong></div>
         </div>
 

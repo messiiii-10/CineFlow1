@@ -54,6 +54,37 @@ namespace CineFlow.Services
                 new FirebasePasswordRequest(email, password),
                 cancellationToken);
 
+        public async Task<FirebasePasswordResetResult> SendPasswordResetEmailAsync(string email, CancellationToken cancellationToken = default)
+        {
+            if (!IsEnabled)
+                return FirebasePasswordResetResult.Failure("Firebase kimlik dogrulama kapali.");
+
+            if (!IsConfigured)
+                return FirebasePasswordResetResult.Failure(ConfigurationErrorMessage);
+
+            try
+            {
+                var httpClient = _httpClientFactory.CreateClient(nameof(FirebaseIdentityService));
+                var response = await httpClient.PostAsJsonAsync(
+                    $"https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key={_settings.ApiKey}",
+                    new FirebasePasswordResetRequest(email),
+                    cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorPayload = await response.Content.ReadFromJsonAsync<FirebaseErrorEnvelope>(cancellationToken: cancellationToken);
+                    return FirebasePasswordResetResult.Failure(MapFirebaseError(errorPayload?.Error?.Message));
+                }
+
+                return FirebasePasswordResetResult.Success();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Firebase sifre sifirlama istegi basarisiz oldu.");
+                return FirebasePasswordResetResult.Failure("Firebase baglantisi sirasinda bir hata olustu.");
+            }
+        }
+
         private async Task<FirebaseAuthResult> ExecuteAuthRequestAsync(string endpoint, FirebasePasswordRequest payload, CancellationToken cancellationToken)
         {
             if (!IsEnabled)
@@ -130,6 +161,11 @@ namespace CineFlow.Services
             public bool ReturnSecureToken { get; init; } = true;
         }
 
+        private sealed record FirebasePasswordResetRequest(string Email)
+        {
+            public string RequestType { get; init; } = "PASSWORD_RESET";
+        }
+
         private sealed class FirebaseAuthApiResponse
         {
             public string IdToken { get; set; } = string.Empty;
@@ -157,5 +193,12 @@ namespace CineFlow.Services
         public static FirebaseAuthResult Success(FirebaseAuthUser user) => new(true, user, null);
 
         public static FirebaseAuthResult Failure(string message) => new(false, null, message);
+    }
+
+    public sealed record FirebasePasswordResetResult(bool Succeeded, string? ErrorMessage)
+    {
+        public static FirebasePasswordResetResult Success() => new(true, null);
+
+        public static FirebasePasswordResetResult Failure(string message) => new(false, message);
     }
 }

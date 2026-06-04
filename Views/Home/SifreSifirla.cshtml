@@ -1,0 +1,27 @@
+@model CineFlow.Models.ViewModels.ForgotPasswordViewModel
+
+<section class="auth-shell auth-shell--compact">
+    <div class="auth-copy">
+        <div class="eyebrow">Şifre Sıfırlama</div>
+        <h1>Hesabına tekrar erişmek için sıfırlama bağlantısı iste.</h1>
+        <p>Firebase Authentication aktifse bağlantı kayıtlı e-posta adresine gönderilir.</p>
+    </div>
+
+    <div class="form-card">
+        <h2>Şifremi Unuttum</h2>
+
+        <form asp-action="SifreSifirla" method="post" novalidate>
+            <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+            <div class="mb-4">
+                <label asp-for="Email" class="form-label"></label>
+                <input asp-for="Email" class="form-control form-control-lg" placeholder="ornek@site.com" />
+                <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
+
+            <button type="submit" class="btn btn-dark w-100 rounded-pill py-3">Sıfırlama Bağlantısı Gönder</button>
+        </form>
+
+        <p class="helper-copy">Şifreni hatırladıysan <a href="/Home/Login">giriş sayfasına dön</a>.</p>
+    </div>
+</section>

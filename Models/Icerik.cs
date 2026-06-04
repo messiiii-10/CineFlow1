@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
+using System.Linq;
 
 namespace CineFlow.Models
 {
@@ -100,14 +101,14 @@ namespace CineFlow.Models
         {
             "TV" => "TV Anime",
             "SERIES" => "Dizi",
-            "TV_SHORT" => "TV Short",
+            "TV_SHORT" => "Kısa TV Anime",
             "MOVIE" => "Film",
-            "SPECIAL" => "Special",
+            "SPECIAL" => "Özel Bölüm",
             "OVA" => "OVA",
             "ONA" => "ONA",
             "MANGA" => "Manga",
-            "NOVEL" => "Novel",
-            "ONE_SHOT" => "One Shot",
+            "NOVEL" => "Roman",
+            "ONE_SHOT" => "Tek Bölüm",
             "MANHWA" => "Manhwa",
             "MANHUA" => "Manhua",
             _ => Format ?? TurEtiketi
@@ -126,9 +127,9 @@ namespace CineFlow.Models
         public string KaynakEtiketi => Kaynak switch
         {
             "MANGA" => "Manga",
-            "LIGHT_NOVEL" => "Light Novel",
+            "LIGHT_NOVEL" => "Hafif Roman",
             "NOVEL" => "Roman",
-            "WEB_NOVEL" => "Web Novel",
+            "WEB_NOVEL" => "Web Roman",
             "ORIGINAL" => "Orijinal",
             "VIDEO_GAME" => "Video Oyunu",
             "OTHER" => "Diğer",
@@ -151,6 +152,10 @@ namespace CineFlow.Models
             ? "Bilinmiyor"
             : Populerlik.Value.ToString("N0", CultureInfo.InvariantCulture);
 
+        public string TurkceAciklama => ShouldUseOriginalDescription(Aciklama)
+            ? Aciklama
+            : BuildTurkishDescription();
+
         public IReadOnlyList<string> KategoriListesi => SplitList(Kategori);
 
         public IReadOnlyList<string> EtiketListesi => SplitList(Etiketler);
@@ -164,6 +169,77 @@ namespace CineFlow.Models
             if (string.IsNullOrWhiteSpace(value)) return null;
             return Uri.IsWellFormedUriString(value, UriKind.Absolute) ? value : $"/img/afisler/{value}";
         }
+
+        private string BuildTurkishDescription()
+        {
+            var turAdi = TurEtiketi.ToLower(new CultureInfo("tr-TR"));
+            var format = FormatEtiketi;
+            var kategoriler = KategoriListesi.Select(TranslateCategory).Take(3).ToList();
+            var kategoriMetni = kategoriler.Count > 0
+                ? $"{string.Join(", ", kategoriler)} çizgisini öne çıkaran"
+                : "karakterleri ve atmosferiyle öne çıkan";
+
+            var parcalar = new List<string>
+            {
+                $"{Baslik}, {kategoriMetni} {format} formatında bir {turAdi} içeriğidir."
+            };
+
+            if (BaslangicYili is not null)
+            {
+                parcalar.Add(BitisYili is not null && BitisYili != BaslangicYili
+                    ? $"{BaslangicYili}-{BitisYili} dönemini kapsar."
+                    : $"{BaslangicYili} döneminde öne çıkar.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(Studyo))
+                parcalar.Add($"Yapım tarafında {Studyo} adı dikkat çeker.");
+
+            if (KarakterListesi.Count > 0)
+                parcalar.Add($"Başlıca karakterler: {string.Join(", ", KarakterListesi.Take(4))}.");
+
+            return string.Join(" ", parcalar);
+        }
+
+        private static bool ShouldUseOriginalDescription(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return false;
+
+            var lower = value.ToLower(new CultureInfo("tr-TR"));
+            if (lower.Contains("(source:") || lower.Contains("source:")) return false;
+
+            var turkishMarkers = new[]
+            {
+                "ı", "ğ", "ü", "ş", "ö", "ç", "bir ", " ve ", " için ", "ile ", "olarak", "anlat"
+            };
+
+            return turkishMarkers.Any(lower.Contains);
+        }
+
+        private static string TranslateCategory(string value) => value switch
+        {
+            "Action" => "aksiyon",
+            "Adventure" => "macera",
+            "Comedy" => "komedi",
+            "Crime" => "suç",
+            "Drama" => "dram",
+            "Ecchi" => "ecchi",
+            "Family" => "aile",
+            "Fantasy" => "fantastik",
+            "Historical" => "tarihi",
+            "Horror" => "korku",
+            "Mecha" => "mecha",
+            "Music" => "müzik",
+            "Mystery" => "gizem",
+            "Performing Arts" => "sahne sanatları",
+            "Psychological" => "psikolojik",
+            "Romance" => "romantik",
+            "Sci-Fi" => "bilim kurgu",
+            "Slice of Life" => "gündelik yaşam",
+            "Sports" => "spor",
+            "Supernatural" => "doğaüstü",
+            "Thriller" => "gerilim",
+            _ => value
+        };
 
         private static IReadOnlyList<string> SplitList(string? value)
         {

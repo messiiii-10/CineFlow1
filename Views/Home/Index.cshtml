@@ -68,14 +68,16 @@
             {
                 <div class="media-frame media-frame--hero" data-media-frame>
                     <img src="@featured.GorselKaynak" alt="@featured.Baslik kapağı" class="media-frame__image" data-fallback-image />
-                    <div class="poster-placeholder hero-visual__placeholder media-frame__fallback" data-media-fallback hidden>
+                    <div class="poster-placeholder poster-placeholder--title hero-visual__placeholder media-frame__fallback" data-media-fallback hidden>
+                        <strong>@featured.Baslik</strong>
                         <span>@featured.TurEtiketi</span>
                     </div>
                 </div>
             }
             else
             {
-                <div class="poster-placeholder hero-visual__placeholder">
+                <div class="poster-placeholder poster-placeholder--title hero-visual__placeholder">
+                    <strong>@featured.Baslik</strong>
                     <span>@featured.TurEtiketi</span>
                 </div>
             }
@@ -162,21 +164,23 @@
             @foreach (var item in Model.Icerikler)
             {
                 var hasPoster = !string.IsNullOrWhiteSpace(item.GorselKaynak);
-                var summary = item.Aciklama.Length > 180 ? item.Aciklama[..180] + "..." : item.Aciklama;
+                var summary = item.TurkceAciklama.Length > 180 ? item.TurkceAciklama[..180] + "..." : item.TurkceAciklama;
 
                 <article class="catalog-card">
                     @if (hasPoster)
                     {
                         <div class="media-frame" data-media-frame>
                             <img src="@item.GorselKaynak" alt="@item.Baslik afişi" class="poster-frame media-frame__image" data-fallback-image />
-                            <div class="poster-placeholder media-frame__fallback" data-media-fallback hidden>
+                            <div class="poster-placeholder poster-placeholder--title media-frame__fallback" data-media-fallback hidden>
+                                <strong>@item.Baslik</strong>
                                 <span>@item.TurEtiketi</span>
                             </div>
                         </div>
                     }
                     else
                     {
-                        <div class="poster-placeholder">
+                        <div class="poster-placeholder poster-placeholder--title">
+                            <strong>@item.Baslik</strong>
                             <span>@item.TurEtiketi</span>
                         </div>
                     }

@@ -45,6 +45,7 @@
       frame.classList.add("is-broken");
       fallback.hidden = false;
       image.setAttribute("aria-hidden", "true");
+      image.removeAttribute("src");
     };
 
     document.querySelectorAll("[data-fallback-image]").forEach((image) => {

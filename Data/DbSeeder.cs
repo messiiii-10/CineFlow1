@@ -38,6 +38,7 @@ namespace CineFlow.Data
             }
 
             await EnsureCuratedCatalogExpansionAsync(dbContext);
+            EnsureCuratedCatalogImageCorrections(dbContext);
 
             await dbContext.SaveChangesAsync();
         }
@@ -153,6 +154,84 @@ namespace CineFlow.Data
 
         private static string BuildCatalogKey(Icerik item)
             => $"{item.Baslik.Trim()}::{(int)item.Tur}";
+
+        private static void EnsureCuratedCatalogImageCorrections(AppDbContext dbContext)
+        {
+            var posterUrls = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Arcane"] = "https://static.tvmaze.com/uploads/images/original_untouched/536/1340287.jpg",
+                ["Severance"] = "https://static.tvmaze.com/uploads/images/original_untouched/548/1371406.jpg",
+                ["Mr. Robot"] = "https://static.tvmaze.com/uploads/images/original_untouched/211/528026.jpg",
+                ["The Leftovers"] = "https://static.tvmaze.com/uploads/images/original_untouched/503/1259794.jpg",
+                ["Babylon Berlin"] = "https://static.tvmaze.com/uploads/images/original_untouched/579/1448426.jpg",
+                ["Blue Eye Samurai"] = "https://static.tvmaze.com/uploads/images/original_untouched/488/1220768.jpg",
+                ["The Bear"] = "https://static.tvmaze.com/uploads/images/original_untouched/626/1567246.jpg",
+                ["Frieren: Beyond Journey's End"] = "https://cdn.myanimelist.net/images/anime/1015/138006l.jpg",
+                ["Odd Taxi"] = "https://cdn.myanimelist.net/images/anime/1981/113348l.jpg",
+                ["Mushishi"] = "https://cdn.myanimelist.net/images/anime/2/73862l.jpg",
+                ["Ping Pong the Animation"] = "https://cdn.myanimelist.net/images/anime/1586/146565l.jpg",
+                ["Land of the Lustrous"] = "https://cdn.myanimelist.net/images/anime/3/88293l.jpg",
+                ["The Tatami Galaxy"] = "https://cdn.myanimelist.net/images/anime/1633/123689l.jpg",
+                ["Kaiba"] = "https://cdn.myanimelist.net/images/anime/1959/147908l.jpg",
+                ["Baccano!"] = "https://cdn.myanimelist.net/images/anime/3/14547l.jpg",
+                ["Succession"] = "https://static.tvmaze.com/uploads/images/original_untouched/453/1134275.jpg",
+                ["Chernobyl"] = "https://static.tvmaze.com/uploads/images/original_untouched/193/482599.jpg",
+                ["Fleabag"] = "https://static.tvmaze.com/uploads/images/original_untouched/192/482341.jpg",
+                ["The Expanse"] = "https://static.tvmaze.com/uploads/images/original_untouched/445/1114081.jpg",
+                ["Shouwa Genroku Rakugo Shinjuu"] = "https://cdn.myanimelist.net/images/anime/1354/124768l.jpg",
+                ["Sonny Boy"] = "https://cdn.myanimelist.net/images/anime/1509/117149l.jpg",
+                ["A Place Further Than the Universe"] = "https://cdn.myanimelist.net/images/anime/6/89879l.jpg",
+                ["Haibane Renmei"] = "https://cdn.myanimelist.net/images/anime/9/13134l.jpg",
+                ["Oyasumi Punpun"] = "https://cdn.myanimelist.net/images/manga/3/266834l.jpg",
+                ["Dorohedoro"] = "https://cdn.myanimelist.net/images/manga/3/258246l.jpg",
+                ["Girls' Last Tour"] = "https://cdn.myanimelist.net/images/manga/1/185918l.jpg",
+                ["Blame!"] = "https://cdn.myanimelist.net/images/manga/1/174389l.jpg",
+                ["Spirited Away"] = "https://cdn.myanimelist.net/images/anime/6/79597l.jpg",
+                ["Perfect Blue"] = "https://cdn.myanimelist.net/images/anime/1254/134212l.jpg",
+                ["Paprika"] = "https://cdn.myanimelist.net/images/anime/1929/93629l.jpg",
+                ["Princess Mononoke"] = "https://cdn.myanimelist.net/images/anime/1355/147277l.jpg",
+                ["Texhnolyze"] = "https://cdn.myanimelist.net/images/anime/1027/131977l.jpg",
+                ["Ergo Proxy"] = "https://cdn.myanimelist.net/images/anime/1183/136187l.jpg",
+                ["Katanagatari"] = "https://cdn.myanimelist.net/images/anime/1112/119225l.jpg",
+                ["Dennou Coil"] = "https://cdn.myanimelist.net/images/anime/5/12844l.jpg",
+                ["Planetes"] = "https://cdn.myanimelist.net/images/anime/1209/142900l.jpg",
+                ["Kaiji: Ultimate Survivor"] = "https://cdn.myanimelist.net/images/anime/12/80032l.jpg",
+                ["Serial Experiments Lain"] = "https://cdn.myanimelist.net/images/anime/1718/91550l.jpg",
+                ["Paranoia Agent"] = "https://cdn.myanimelist.net/images/anime/7/10240l.jpg",
+                ["Gankutsuou"] = "https://cdn.myanimelist.net/images/anime/1910/138560l.jpg",
+                ["From the New World"] = "https://cdn.myanimelist.net/images/anime/1549/136389l.jpg",
+                ["Mononoke"] = "https://cdn.myanimelist.net/images/anime/3/20713l.jpg",
+                ["Moribito: Guardian of the Spirit"] = "https://cdn.myanimelist.net/images/anime/4/50337l.jpg",
+                ["Space Brothers"] = "https://cdn.myanimelist.net/images/anime/1290/135694l.jpg",
+                ["Revolutionary Girl Utena"] = "https://cdn.myanimelist.net/images/anime/1078/95285l.jpg",
+                ["Rainbow"] = "https://cdn.myanimelist.net/images/anime/9/72697l.jpg",
+                ["The Americans"] = "https://static.tvmaze.com/uploads/images/original_untouched/146/366911.jpg",
+                ["Black Sails"] = "https://static.tvmaze.com/uploads/images/original_untouched/501/1253514.jpg",
+                ["Twin Peaks"] = "https://static.tvmaze.com/uploads/images/original_untouched/397/992910.jpg",
+                ["Millennium Actress"] = "https://cdn.myanimelist.net/images/anime/1648/93626l.jpg",
+                ["Tokyo Godfathers"] = "https://cdn.myanimelist.net/images/anime/1480/132791l.jpg",
+                ["Ghost in the Shell"] = "https://cdn.myanimelist.net/images/anime/10/82594l.jpg",
+                ["Redline"] = "https://cdn.myanimelist.net/images/anime/12/28553l.jpg"
+            };
+
+            var items = dbContext.Icerikler
+                .AsEnumerable()
+                .Concat(dbContext.Icerikler.Local)
+                .Distinct();
+
+            foreach (var item in items)
+            {
+                if (posterUrls.TryGetValue(item.Baslik, out var posterUrl) && IsStockImagePath(item.ResimYolu))
+                    item.ResimYolu = posterUrl;
+
+                if (IsStockImagePath(item.BannerYolu))
+                    item.BannerYolu = null;
+            }
+        }
+
+        private static bool IsStockImagePath(string? imagePath)
+            => !string.IsNullOrWhiteSpace(imagePath)
+                && imagePath.Contains("images.unsplash.com", StringComparison.OrdinalIgnoreCase);
 
         private static List<Icerik> BuildCuratedCatalogExpansion()
         {

@@ -62,17 +62,20 @@
                 <tbody>
                     @foreach (var item in Model.Icerikler)
                     {
-                        var hasPoster = !string.IsNullOrWhiteSpace(item.ResimYolu);
+                        var hasPoster = !string.IsNullOrWhiteSpace(item.GorselKaynak);
 
                         <tr>
                             <td>
                                 @if (hasPoster)
                                 {
-                                    <img src="@Url.Content($"~/img/afisler/{item.ResimYolu}")" alt="@item.Baslik afişi" class="admin-thumb" />
+                                    <div class="media-frame admin-thumb-frame" data-media-frame>
+                                        <img src="@item.GorselKaynak" alt="@item.Baslik afişi" class="admin-thumb media-frame__image" data-fallback-image />
+                                        <div class="admin-thumb admin-thumb--placeholder media-frame__fallback" data-media-fallback hidden>@item.Baslik[0]</div>
+                                    </div>
                                 }
                                 else
                                 {
-                                    <div class="admin-thumb admin-thumb--placeholder">@item.Tur.ToString()[0]</div>
+                                    <div class="admin-thumb admin-thumb--placeholder">@item.Baslik[0]</div>
                                 }
                             </td>
                             <td class="fw-semibold">@item.Baslik</td>

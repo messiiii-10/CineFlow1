@@ -8,7 +8,8 @@ using System;
 using CineFlow.Models.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using CineFlow.Services;
-
+using System.Globalization;
+using System.Text;
 namespace CineFlow.Controllers
 {
     public class AdminController : Controller
@@ -171,5 +172,168 @@ namespace CineFlow.Controllers
             HttpContext.Session.Clear();
             return RedirectToAction("Index", "Home");
         }
+        // =====================================================================
+// AdminController.cs dosyasına EKLENECEK metodlar
+// Mevcut using'lere bunları ekle:
+//   using System.Globalization;
+//   using System.Text;
+// =====================================================================
+
+// --- Index() action'ının üstüne veya Logout()'un altına ekle ---
+
+public async Task<IActionResult> Rapor(
+    DateTime? baslangic,
+    DateTime? bitis,
+    string? durum,
+    string? tur)
+{
+    if (!IsAdmin())
+        return RedirectToAction("Login", _firebaseIdentityService.IsEnabled ? "Home" : "Admin");
+
+    // --- İstatistikler ---
+    var toplamKullanici  = await _dbContext.Kullanicilar.CountAsync();
+    var toplamIcerik     = await _dbContext.Icerikler.CountAsync();
+    var toplamYorum      = await _dbContext.Yorumlar.CountAsync();
+    var toplamKayit      = await _dbContext.KullaniciIcerikKayitlari.CountAsync();
+
+    // Türe göre dağılım
+    var animeCount = await _dbContext.Icerikler.CountAsync(x => x.Tur == IcerikTuru.Anime);
+    var mangaCount = await _dbContext.Icerikler.CountAsync(x => x.Tur == IcerikTuru.Manga);
+    var diziCount  = await _dbContext.Icerikler.CountAsync(x => x.Tur == IcerikTuru.Dizi);
+    var filmCount  = await _dbContext.Icerikler.CountAsync(x => x.Tur == IcerikTuru.Film);
+
+    // Son 6 ay aylık yorum sayıları
+    var simdi = DateTime.UtcNow;
+    var aylikYorumlar = new List<AylikVeri>();
+    for (int i = 5; i >= 0; i--)
+    {
+        var ay = simdi.AddMonths(-i);
+        var sayi = await _dbContext.Yorumlar.CountAsync(y =>
+            y.Tarih.Year == ay.Year && y.Tarih.Month == ay.Month);
+        aylikYorumlar.Add(new AylikVeri
+        {
+            Ay   = ay.ToString("MMM yyyy", new CultureInfo("tr-TR")),
+            Sayi = sayi
+        });
+    }
+
+    // Kullanıcı kayıt durum dağılımı
+    var planCount       = await _dbContext.KullaniciIcerikKayitlari.CountAsync(x => x.Durum == KullaniciIcerikDurumu.Planliyor);
+    var izliyorCount    = await _dbContext.KullaniciIcerikKayitlari.CountAsync(x => x.Durum == KullaniciIcerikDurumu.Izliyor);
+    var tamamlandiCount = await _dbContext.KullaniciIcerikKayitlari.CountAsync(x => x.Durum == KullaniciIcerikDurumu.Tamamlandi);
+    var biraktiCount    = await _dbContext.KullaniciIcerikKayitlari.CountAsync(x => x.Durum == KullaniciIcerikDurumu.Birakti);
+
+    // En çok ziyaret edilen 5 içerik
+    var enCokZiyaret = await _dbContext.KullaniciIcerikKayitlari
+        .Include(x => x.Icerik)
+        .GroupBy(x => x.Icerik!.Baslik)
+        .Select(g => new IcerikZiyaret
+        {
+            Baslik       = g.Key,
+            ToplamZiyaret = g.Sum(x => x.ZiyaretSayisi)
+        })
+        .OrderByDescending(x => x.ToplamZiyaret)
+        .Take(5)
+        .ToListAsync();
+
+    // --- Rapor listesi (filtrelenebilir) ---
+    var query = _dbContext.KullaniciIcerikKayitlari
+        .Include(x => x.Icerik)
+        .AsQueryable();
+
+    if (baslangic.HasValue)
+        query = query.Where(x => x.OlusturmaTarihi >= baslangic.Value);
+    if (bitis.HasValue)
+        query = query.Where(x => x.OlusturmaTarihi <= bitis.Value.AddDays(1));
+    if (!string.IsNullOrWhiteSpace(durum) && Enum.TryParse<KullaniciIcerikDurumu>(durum, out var durumEnum))
+        query = query.Where(x => x.Durum == durumEnum);
+    if (!string.IsNullOrWhiteSpace(tur) && Enum.TryParse<IcerikTuru>(tur, out var turEnum))
+        query = query.Where(x => x.Icerik!.Tur == turEnum);
+
+    var kayitlar = await query
+        .OrderByDescending(x => x.OlusturmaTarihi)
+        .Take(500)
+        .ToListAsync();
+
+    var vm = new AdminRaporViewModel
+    {
+        ToplamKullanici      = toplamKullanici,
+        ToplamIcerik         = toplamIcerik,
+        ToplamYorum          = toplamYorum,
+        ToplamKayit          = toplamKayit,
+        AnimeCount           = animeCount,
+        MangaCount           = mangaCount,
+        DiziCount            = diziCount,
+        FilmCount            = filmCount,
+        AylikYorumlar        = aylikYorumlar,
+        PlanlivoryorCount    = planCount,
+        IzliyorCount         = izliyorCount,
+        TamamlandiCount      = tamamlandiCount,
+        BiraktiCount         = biraktiCount,
+        EnCokZiyaretEdilen   = enCokZiyaret,
+        Kayitlar             = kayitlar,
+        BaslangicTarihi      = baslangic,
+        BitisTarihi          = bitis,
+        DurumFiltre          = durum,
+        TurFiltre            = tur
+    };
+
+    return View(vm);
+}
+
+// PDF Export — tablo verisini CSV olarak indir (harici kütüphane gerektirmez)
+public async Task<IActionResult> RaporIndir(
+    DateTime? baslangic,
+    DateTime? bitis,
+    string? durum,
+    string? tur)
+{
+    if (!IsAdmin())
+        return RedirectToAction("Login", _firebaseIdentityService.IsEnabled ? "Home" : "Admin");
+
+    var query = _dbContext.KullaniciIcerikKayitlari
+        .Include(x => x.Icerik)
+        .AsQueryable();
+
+    if (baslangic.HasValue)
+        query = query.Where(x => x.OlusturmaTarihi >= baslangic.Value);
+    if (bitis.HasValue)
+        query = query.Where(x => x.OlusturmaTarihi <= bitis.Value.AddDays(1));
+    if (!string.IsNullOrWhiteSpace(durum) && Enum.TryParse<KullaniciIcerikDurumu>(durum, out var durumEnum))
+        query = query.Where(x => x.Durum == durumEnum);
+    if (!string.IsNullOrWhiteSpace(tur) && Enum.TryParse<IcerikTuru>(tur, out var turEnum))
+        query = query.Where(x => x.Icerik!.Tur == turEnum);
+
+    var kayitlar = await query
+        .OrderByDescending(x => x.OlusturmaTarihi)
+        .Take(5000)
+        .ToListAsync();
+
+    var sb = new StringBuilder();
+    sb.AppendLine("Kullanici Email,Icerik,Tur,Durum,Puan,Favori,Ziyaret,Olusturma Tarihi");
+    foreach (var k in kayitlar)
+    {
+        sb.AppendLine(string.Join(",",
+            Esc(k.KullaniciEmail),
+            Esc(k.Icerik?.Baslik ?? "-"),
+            Esc(k.Icerik?.TurEtiketi ?? "-"),
+            Esc(k.DurumEtiketi),
+            k.KisiselPuan?.ToString() ?? "-",
+            k.FavoriMi ? "Evet" : "Hayır",
+            k.ZiyaretSayisi.ToString(),
+            k.OlusturmaTarihi.ToString("dd.MM.yyyy HH:mm")));
+    }
+
+    var bytes = Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(sb.ToString())).ToArray();
+    return File(bytes, "text/csv", $"cineflow-rapor-{DateTime.Now:yyyyMMdd}.csv");
+}
+
+private static string Esc(string? v)
+{
+    if (string.IsNullOrEmpty(v)) return "";
+    return v.Contains(',') || v.Contains('"') || v.Contains('\n')
+        ? $"\"{v.Replace("\"", "\"\"")}\""
+        : v;
+}
     }
 }

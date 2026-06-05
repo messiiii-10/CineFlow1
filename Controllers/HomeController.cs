@@ -59,6 +59,22 @@
                     .ThenByDescending(x => x.Skor ?? 0)
                     .ToListAsync();
 
+                // Home hero: "Breaking Bad" yerine en yüksek popüler JoJo içeriği.
+                // (Seed dosyasında Breaking Bad bulunsa bile, hero seçimini JoJo'ya sabitliyoruz.)
+                var jojoFeatured = tumIcerikler.FirstOrDefault(x =>
+                    (!string.IsNullOrWhiteSpace(x.Baslik) &&
+                     x.Baslik.Contains("JoJo", StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrWhiteSpace(x.AlternatifBaslik) &&
+                     x.AlternatifBaslik.Contains("JoJo", StringComparison.OrdinalIgnoreCase))
+                );
+
+                var spotlightAnime = tumIcerikler.FirstOrDefault(x =>
+                    x.Tur == IcerikTuru.Anime && !string.IsNullOrWhiteSpace(x.GorselKaynak));
+                var spotlightManga = tumIcerikler.FirstOrDefault(x =>
+                    x.Tur == IcerikTuru.Manga && !string.IsNullOrWhiteSpace(x.GorselKaynak));
+                var spotlightFilm = tumIcerikler.FirstOrDefault(x =>
+                    x.Tur == IcerikTuru.Film && !string.IsNullOrWhiteSpace(x.GorselKaynak));
+
                 var sonuc = await katalog
                     .OrderByDescending(x => x.Populerlik ?? 0)
                     .ThenByDescending(x => x.Skor ?? 0)
@@ -76,9 +92,15 @@
                     AnimeSayisi = tumIcerikler.Count(x => x.Tur == IcerikTuru.Anime),
                     MangaSayisi = tumIcerikler.Count(x => x.Tur == IcerikTuru.Manga),
                     DiziSayisi = tumIcerikler.Count(x => x.Tur == IcerikTuru.Dizi),
-                    OneCikanIcerik = tumIcerikler.FirstOrDefault(x => x.Tur == IcerikTuru.Dizi && !string.IsNullOrWhiteSpace(x.GorselKaynak))
-                        ?? tumIcerikler.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x.GorselKaynak))
-                        ?? tumIcerikler.FirstOrDefault(),
+                    OneCikanIcerik =
+                        (jojoFeatured != null && !string.IsNullOrWhiteSpace(jojoFeatured.GorselKaynak))
+                            ? jojoFeatured
+                            : (tumIcerikler.FirstOrDefault(x => x.Tur == IcerikTuru.Dizi && !string.IsNullOrWhiteSpace(x.GorselKaynak))
+                               ?? tumIcerikler.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x.GorselKaynak))
+                               ?? tumIcerikler.FirstOrDefault()),
+                    SpotlightAnime = spotlightAnime,
+                    SpotlightManga = spotlightManga,
+                    SpotlightFilm = spotlightFilm,
                     Kategoriler = tumIcerikler
                         .SelectMany(x => x.KategoriListesi)
                         .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -111,7 +133,7 @@
                     .OrderByDescending(x => x.Kategori == icerik.Kategori)
                     .ThenByDescending(x => x.Skor ?? 0)
                     .ThenByDescending(x => x.Populerlik ?? 0)
-                    .Take(4)
+                    .Take(8)
                     .ToListAsync();
 
                 var currentEmail = GetCurrentEmail();

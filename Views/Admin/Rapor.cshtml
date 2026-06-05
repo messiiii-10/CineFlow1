@@ -1,0 +1,557 @@
+@model CineFlow.Models.ViewModels.AdminRaporViewModel
+@{
+    ViewData["Title"] = "Rapor & İstatistik";
+    Layout = "_Layout";
+}
+<style>
+        /* Dashboard özel stiller */
+        .rapor-hero {
+            display: grid;
+            grid-template-columns: minmax(0, 1.8fr) minmax(280px, 0.9fr);
+            gap: 1.8rem;
+            padding: 2.2rem;
+            border-radius: calc(var(--radius-xl) + 2px);
+            background:
+                linear-gradient(120deg, rgba(255,255,255,0.06), transparent 34%),
+                radial-gradient(circle at 85% 18%, rgba(250,205,138,0.18), transparent 22%),
+                linear-gradient(135deg, #18120f 0%, #4c2e22 52%, #9f462d 100%);
+            color: #fff8f2;
+            border: 1px solid var(--line);
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 1.8rem;
+        }
+        .rapor-hero::before {
+            content: "";
+            position: absolute;
+            inset: 0 0 auto 0;
+            height: 3px;
+            background: linear-gradient(90deg, rgba(215,186,141,0), rgba(215,186,141,0.8), rgba(163,74,47,0.88), rgba(215,186,141,0));
+        }
+        .rapor-hero__copy { display: grid; align-content: start; gap: 0.5rem; }
+        .rapor-hero__title {
+            font-family: "Source Serif 4", Georgia, serif;
+            font-size: clamp(2rem, 3vw, 3.2rem);
+            line-height: 1;
+            letter-spacing: -0.02em;
+            margin: 0;
+        }
+        .rapor-hero__sub { color: rgba(255,248,242,0.72); font-size: 1rem; margin: 0; }
+        .rapor-hero__actions { display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
+        .rapor-hero__stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.9rem;
+            align-content: start;
+        }
+        .rapor-stat {
+            padding: 1.1rem 1.1rem 1.15rem;
+            border-radius: 22px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.07);
+            backdrop-filter: blur(8px);
+        }
+        .rapor-stat__label { font-size: 0.75rem; color: rgba(255,248,242,0.6); text-transform: uppercase; letter-spacing: 0.06em; }
+        .rapor-stat__value { font-size: 1.9rem; font-weight: 700; line-height: 1.1; margin-top: 0.2rem; font-family: "Source Serif 4", serif; }
+        .rapor-stat__value.gold { color: var(--gold); }
+        .rapor-stat__value.white { color: #fff8f2; }
+
+        /* Grafik kartları */
+        .charts-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 1.8rem;
+        }
+        .chart-panel {
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.5), transparent 22%),
+                var(--surface);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-xl);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-soft);
+            position: relative;
+            overflow: hidden;
+        }
+        .chart-panel::before {
+            content: "";
+            position: absolute;
+            inset: 0 0 auto 0;
+            height: 3px;
+            background: linear-gradient(90deg, rgba(215,186,141,0), rgba(215,186,141,0.8), rgba(163,74,47,0.88), rgba(215,186,141,0));
+        }
+        .chart-panel__title {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            margin-bottom: 1.25rem;
+            font-family: "Space Grotesk", sans-serif;
+        }
+        .chart-wrap { position: relative; height: 210px; }
+
+        /* Top 5 bar */
+        .bar-list { display: flex; flex-direction: column; gap: 0.7rem; }
+        .bar-item { display: flex; flex-direction: column; gap: 0.3rem; }
+        .bar-label { font-size: 0.82rem; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+        .bar-track { background: var(--bg-strong); border-radius: 6px; height: 7px; overflow: hidden; }
+        .bar-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--accent), var(--gold)); transition: width 0.8s ease; }
+        .bar-meta { font-size: 0.72rem; color: var(--muted); }
+
+        /* Rapor bölümü */
+        .rapor-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .rapor-section-header h2 {
+            font-family: "Source Serif 4", serif;
+            font-size: 1.4rem;
+            margin: 0;
+        }
+
+        /* Filtre barı */
+        .filter-panel {
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.5), transparent 22%),
+                var(--surface);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.85rem;
+            align-items: flex-end;
+            margin-bottom: 1.25rem;
+            box-shadow: var(--shadow-soft);
+        }
+        .filter-group { display: flex; flex-direction: column; gap: 0.3rem; }
+        .filter-group label { font-size: 0.75rem; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+        .filter-group input[type="date"],
+        .filter-group select {
+            background: rgba(255,255,255,0.84);
+            border: 1px solid rgba(31,26,23,0.12);
+            border-radius: 18px;
+            color: var(--ink);
+            padding: 0.55rem 0.9rem;
+            font-size: 0.875rem;
+            font-family: "Space Grotesk", sans-serif;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .filter-group input:focus,
+        .filter-group select:focus {
+            border-color: rgba(180,69,44,0.45);
+            box-shadow: 0 0 0 0.2rem rgba(180,69,44,0.14);
+        }
+
+        .btn-rapor-primary {
+            border-radius: 999px;
+            font-weight: 600;
+            padding: 0.55rem 1.3rem;
+            font-size: 0.875rem;
+            color: #fff;
+            background: linear-gradient(135deg, var(--nav), var(--nav-soft));
+            border: 1px solid rgba(27,21,18,0.88);
+            box-shadow: 0 10px 24px rgba(27,21,18,0.18);
+            cursor: pointer;
+            transition: transform 0.18s, box-shadow 0.18s;
+        }
+        .btn-rapor-primary:hover { transform: translateY(-1px); }
+
+        .btn-rapor-outline {
+            border-radius: 999px;
+            font-weight: 600;
+            padding: 0.55rem 1.3rem;
+            font-size: 0.875rem;
+            color: var(--ink);
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--line-strong);
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.18s, background 0.18s;
+            display: inline-block;
+        }
+        .btn-rapor-outline:hover { background: rgba(163,74,47,0.08); border-color: rgba(163,74,47,0.32); color: var(--ink); }
+
+        .btn-rapor-accent {
+            border-radius: 999px;
+            font-weight: 600;
+            padding: 0.55rem 1.3rem;
+            font-size: 0.875rem;
+            color: #fff;
+            background: var(--accent);
+            border: 1px solid var(--accent);
+            text-decoration: none;
+            display: inline-block;
+            transition: transform 0.18s, background 0.18s;
+        }
+        .btn-rapor-accent:hover { background: var(--accent-dark); border-color: var(--accent-dark); color: #fff; transform: translateY(-1px); }
+
+        /* Tablo */
+        .admin-table-card {
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.5), transparent 22%),
+                var(--surface);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-soft);
+            overflow: hidden;
+            position: relative;
+        }
+        .admin-table-card::before {
+            content: "";
+            position: absolute;
+            inset: 0 0 auto 0;
+            height: 3px;
+            background: linear-gradient(90deg, rgba(215,186,141,0), rgba(215,186,141,0.8), rgba(163,74,47,0.88), rgba(215,186,141,0));
+        }
+        .tablo-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+        thead th {
+            color: var(--muted);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 0.9rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--line);
+            font-family: "Space Grotesk", sans-serif;
+        }
+        tbody tr { border-bottom: 1px solid var(--line); transition: background 0.15s; }
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: rgba(163,74,47,0.04); }
+        tbody td { padding: 0.7rem 1rem; }
+
+        .badge {
+            display: inline-block;
+            padding: 0.22rem 0.65rem;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+        }
+        .badge-plan    { background: rgba(78,142,247,0.12); color: #3a6abf; }
+        .badge-izliyor { background: var(--success-soft); color: #2a7a45; }
+        .badge-tamam   { background: rgba(215,186,141,0.22); color: #7a5a1a; }
+        .badge-birakti { background: rgba(163,74,47,0.12); color: var(--accent-dark); }
+
+        .empty-state { padding: 3rem; text-align: center; color: var(--muted); }
+
+        /* Admin nav header */
+        .admin-topbar {
+            position: sticky;
+            top: 0;
+            z-index: 60;
+            backdrop-filter: blur(14px);
+        }
+        .admin-nav {
+            padding: 0.95rem 0;
+            background:
+                linear-gradient(90deg, rgba(255,255,255,0.05), transparent 22%),
+                linear-gradient(135deg, rgba(24,18,15,0.98), rgba(58,40,31,0.95) 58%, rgba(91,56,39,0.92));
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 0 16px 44px rgba(31,26,23,0.22);
+        }
+        .admin-nav__inner {
+            max-width: 1560px;
+            margin: 0 auto;
+            padding: 0 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        .admin-nav__left { display: flex; align-items: center; gap: 1.5rem; }
+        .admin-brand { font-size: 1.4rem; font-weight: 700; color: #fff; text-decoration: none; letter-spacing: -0.03em; font-family: "Space Grotesk", sans-serif; }
+        .admin-brand:hover { color: var(--gold); }
+        .admin-nav__links { display: flex; gap: 0.25rem; }
+        .admin-nav__link {
+            padding: 0.45rem 1rem;
+            border-radius: 999px;
+            color: rgba(255,255,255,0.72);
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: background 0.18s, color 0.18s;
+            font-family: "Space Grotesk", sans-serif;
+        }
+        .admin-nav__link:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .admin-nav__link.active { background: rgba(215,186,141,0.18); color: var(--gold); border: 1px solid rgba(215,186,141,0.22); }
+
+        .page-wrap { max-width: 1560px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+
+        @@media (max-width: 900px) {
+            .rapor-hero { grid-template-columns: 1fr; }
+            .rapor-hero__stats { grid-template-columns: repeat(2, 1fr); }
+            .charts-row { grid-template-columns: 1fr; }
+        }
+    </style>
+
+<!-- NAV -->
+<header class="admin-topbar">
+    <div class="admin-nav">
+        <div class="admin-nav__inner">
+            <div class="admin-nav__left">
+                <a href="/Admin/Index" class="admin-brand">CF</a>
+                <nav class="admin-nav__links">
+                    <a href="/Admin/Index" class="admin-nav__link">İçerikler</a>
+                    <a href="/Admin/Rapor" class="admin-nav__link active">Rapor</a>
+                </nav>
+            </div>
+            <a href="/Admin/Logout" class="btn-rapor-outline" style="font-size:.8rem; padding:.4rem .9rem">Çıkış</a>
+        </div>
+    </div>
+</header>
+
+<div class="page-wrap">
+
+    <!-- HERO DASHBOARD -->
+    <div class="rapor-hero">
+        <div class="rapor-hero__copy">
+            <p style="font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,248,242,.5);margin:0">Yönetim Paneli</p>
+            <h1 class="rapor-hero__title">Rapor &<br>İstatistik</h1>
+            <p class="rapor-hero__sub">Katalog, kullanıcı ve etkileşim verileri</p>
+            <div class="rapor-hero__actions">
+                @{
+                    var indirUrl = Url.Action("RaporIndir", "Admin", new {
+                        baslangic = Model.BaslangicTarihi.HasValue ? Model.BaslangicTarihi.Value.ToString("yyyy-MM-dd") : "",
+                        bitis = Model.BitisTarihi.HasValue ? Model.BitisTarihi.Value.ToString("yyyy-MM-dd") : "",
+                        durum = Model.DurumFiltre ?? "",
+                        tur = Model.TurFiltre ?? ""
+                    });
+                }
+                <a href="@indirUrl" class="btn-rapor-accent">⬇ CSV İndir</a>
+                <button type="button" class="btn-rapor-outline" onclick="window.print()">🖨 Yazdır / PDF</button>
+                <a href="/Admin/Index" class="btn-rapor-outline" style="color:#fff;border-color:rgba(255,255,255,.22);">← İçeriklere Dön</a>
+            </div>
+        </div>
+        <div class="rapor-hero__stats">
+            <div class="rapor-stat">
+                <div class="rapor-stat__label">Toplam İçerik</div>
+                <div class="rapor-stat__value gold">@Model.ToplamIcerik</div>
+            </div>
+            <div class="rapor-stat">
+                <div class="rapor-stat__label">Kullanıcı</div>
+                <div class="rapor-stat__value white">@Model.ToplamKullanici</div>
+            </div>
+            <div class="rapor-stat">
+                <div class="rapor-stat__label">Toplam Yorum</div>
+                <div class="rapor-stat__value white">@Model.ToplamYorum</div>
+            </div>
+            <div class="rapor-stat">
+                <div class="rapor-stat__label">Liste Kaydı</div>
+                <div class="rapor-stat__value gold">@Model.ToplamKayit</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GRAFİKLER -->
+    <div class="charts-row">
+        <div class="chart-panel">
+            <div class="chart-panel__title">Türe Göre İçerik Dağılımı</div>
+            <div class="chart-wrap"><canvas id="turChart"></canvas></div>
+        </div>
+        <div class="chart-panel">
+            <div class="chart-panel__title">Aylık Yorum Sayısı — Son 6 Ay</div>
+            <div class="chart-wrap"><canvas id="yorumChart"></canvas></div>
+        </div>
+        <div class="chart-panel">
+            <div class="chart-panel__title">Kullanıcı Liste Durumu</div>
+            <div class="chart-wrap"><canvas id="durumChart"></canvas></div>
+        </div>
+        <div class="chart-panel">
+            <div class="chart-panel__title">En Çok Ziyaret Edilen — Top 5</div>
+            <div class="bar-list" style="margin-top:.25rem">
+                @{
+                    var maxZ = Model.EnCokZiyaretEdilen.Count > 0 ? Model.EnCokZiyaretEdilen[0].ToplamZiyaret : 1;
+                }
+                @foreach (var item in Model.EnCokZiyaretEdilen)
+                {
+                    var pct = maxZ > 0 ? (item.ToplamZiyaret * 100 / maxZ) : 0;
+                    <div class="bar-item">
+                        <span class="bar-label">@item.Baslik</span>
+                        <div class="bar-track"><div class="bar-fill" style="width:@(pct)%"></div></div>
+                        <span class="bar-meta">@item.ToplamZiyaret ziyaret</span>
+                    </div>
+                }
+                @if (!Model.EnCokZiyaretEdilen.Any())
+                {
+                    <p style="color:var(--muted);font-size:.85rem">Henüz ziyaret verisi yok.</p>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- RAPOR LİSTESİ -->
+    <div class="rapor-section-header">
+        <h2>Kullanıcı Kayıt Raporu</h2>
+        <span style="color:var(--muted);font-size:.9rem">@Model.Kayitlar.Count kayıt listeleniyor</span>
+    </div>
+
+    <!-- FİLTRE -->
+    <form method="get" action="/Admin/Rapor" class="filter-panel">
+        <div class="filter-group">
+            <label>Başlangıç</label>
+            @{ var basStr = Model.BaslangicTarihi.HasValue ? Model.BaslangicTarihi.Value.ToString("yyyy-MM-dd") : ""; }
+            <input type="date" name="baslangic" value="@basStr" />
+        </div>
+        <div class="filter-group">
+            <label>Bitiş</label>
+            @{ var bitStr = Model.BitisTarihi.HasValue ? Model.BitisTarihi.Value.ToString("yyyy-MM-dd") : ""; }
+            <input type="date" name="bitis" value="@bitStr" />
+        </div>
+        <div class="filter-group">
+            <label>Durum</label>
+            <select name="durum">
+                <option value="">Tümü</option>
+                @{ var d = Model.DurumFiltre ?? ""; }
+                <option value="Planliyor"  selected="@(d == "Planliyor")">Listemde</option>
+                <option value="Izliyor"    selected="@(d == "Izliyor")">İzliyorum</option>
+                <option value="Tamamlandi" selected="@(d == "Tamamlandi")">Tamamladım</option>
+                <option value="Birakti"    selected="@(d == "Birakti")">Bıraktım</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Tür</label>
+            <select name="tur">
+                <option value="">Tümü</option>
+                @{ var t = Model.TurFiltre ?? ""; }
+                <option value="Anime" selected="@(t == "Anime")">Anime</option>
+                <option value="Manga" selected="@(t == "Manga")">Manga</option>
+                <option value="Dizi"  selected="@(t == "Dizi")">Dizi</option>
+                <option value="Film"  selected="@(t == "Film")">Film</option>
+            </select>
+        </div>
+        <button type="submit" class="btn-rapor-primary">Filtrele</button>
+        <a href="/Admin/Rapor" class="btn-rapor-outline">Temizle</a>
+    </form>
+
+    <!-- TABLO -->
+    <div class="admin-table-card">
+        <div class="tablo-wrap">
+            @if (Model.Kayitlar.Any())
+            {
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Kullanıcı</th>
+                            <th>İçerik</th>
+                            <th>Tür</th>
+                            <th>Durum</th>
+                            <th>Puan</th>
+                            <th>Favori</th>
+                            <th>Ziyaret</th>
+                            <th>Tarih</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{ int rowNum = 1; }
+                        @foreach (var k in Model.Kayitlar)
+                        {
+                            var bc = k.Durum switch
+                            {
+                                CineFlow.Models.KullaniciIcerikDurumu.Planliyor  => "badge-plan",
+                                CineFlow.Models.KullaniciIcerikDurumu.Izliyor    => "badge-izliyor",
+                                CineFlow.Models.KullaniciIcerikDurumu.Tamamlandi => "badge-tamam",
+                                CineFlow.Models.KullaniciIcerikDurumu.Birakti    => "badge-birakti",
+                                _ => "badge-plan"
+                            };
+                            <tr>
+                                <td style="color:var(--muted)">@rowNum</td>
+                                <td style="font-weight:500">@k.KullaniciEmail</td>
+                                <td>@(k.Icerik != null ? k.Icerik.Baslik : "-")</td>
+                                <td style="color:var(--muted)">@(k.Icerik != null ? k.Icerik.TurEtiketi : "-")</td>
+                                <td><span class="badge @bc">@k.DurumEtiketi</span></td>
+                                <td>@(k.KisiselPuan.HasValue ? k.KisiselPuan + "/10" : "—")</td>
+                                <td>@(k.FavoriMi ? "❤️" : "—")</td>
+                                <td style="color:var(--muted)">@k.ZiyaretSayisi</td>
+                                <td style="color:var(--muted)">@k.OlusturmaTarihi.ToString("dd.MM.yyyy")</td>
+                            </tr>
+                            rowNum++;
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <p>Kriterlere uyan kayıt bulunamadı.</p>
+                </div>
+            }
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+Chart.defaults.color = '#6d6157';
+Chart.defaults.borderColor = 'rgba(51,33,20,0.10)';
+Chart.defaults.font.family = "'Space Grotesk', 'Segoe UI', sans-serif";
+
+new Chart(document.getElementById('turChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Anime', 'Manga', 'Dizi', 'Film'],
+        datasets: [{
+            data: [@Model.AnimeCount, @Model.MangaCount, @Model.DiziCount, @Model.FilmCount],
+            backgroundColor: ['#a34a2f','#d7ba8d','#4c2e22','#e8c97a'],
+            borderWidth: 3,
+            borderColor: '#f8f3eb'
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false, cutout: '64%',
+        plugins: { legend: { position: 'bottom', labels: { padding: 16, boxWidth: 12, color: '#6d6157' } } }
+    }
+});
+
+new Chart(document.getElementById('yorumChart'), {
+    type: 'bar',
+    data: {
+        labels: [@Html.Raw(string.Join(",", Model.AylikYorumlar.Select(a => "'" + a.Ay + "'")))],
+        datasets: [{
+            label: 'Yorum',
+            data: [@Html.Raw(string.Join(",", Model.AylikYorumlar.Select(a => a.Sayi.ToString())))],
+            backgroundColor: 'rgba(163,74,47,0.82)',
+            borderRadius: 8,
+            borderSkipped: false
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { grid: { color: 'rgba(51,33,20,0.07)' } },
+            y: { grid: { color: 'rgba(51,33,20,0.07)' }, beginAtZero: true, ticks: { stepSize: 1 } }
+        }
+    }
+});
+
+new Chart(document.getElementById('durumChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Listemde', 'İzliyorum', 'Tamamladım', 'Bıraktım'],
+        datasets: [{
+            data: [@Model.PlanlivoryorCount, @Model.IzliyorCount, @Model.TamamlandiCount, @Model.BiraktiCount],
+            backgroundColor: ['#a34a2f','#d7ba8d','#4c2e22','#e0c4a0'],
+            borderWidth: 3,
+            borderColor: '#f8f3eb'
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false, cutout: '64%',
+        plugins: { legend: { position: 'bottom', labels: { padding: 16, boxWidth: 12, color: '#6d6157' } } }
+    }
+});
+</script>

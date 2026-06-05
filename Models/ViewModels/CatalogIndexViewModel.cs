@@ -9,6 +9,9 @@ namespace CineFlow.Models.ViewModels
         public List<string> Kategoriler { get; set; } = new();
         public List<string> Formatlar { get; set; } = new();
         public Icerik? OneCikanIcerik { get; set; }
+        public Icerik? SpotlightAnime { get; set; }
+        public Icerik? SpotlightManga { get; set; }
+        public Icerik? SpotlightFilm { get; set; }
         public string? Arama { get; set; }
         public string? Kategori { get; set; }
         public string? Format { get; set; }

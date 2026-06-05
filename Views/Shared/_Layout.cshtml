@@ -21,6 +21,7 @@
         var currentUser = Context.Session.GetString("User");
         var isAuthenticated = isAdmin || !string.IsNullOrWhiteSpace(currentUser);
         var publicAdminEmail = Configuration["AdminContact:Email"] ?? "admin@gmail.com";
+        var currentPath = Context.Request.Path.Value ?? "";
     }
     <header>
         <nav class="navbar navbar-expand-lg app-nav">
@@ -44,6 +45,7 @@
                         @if (isAdmin)
                         {
                             <li class="nav-item"><a class="nav-link" href="/Admin/Index">Yönetim</a></li>
+                            <li class="nav-item"><a class="nav-link" href="/Admin/Rapor">Rapor</a></li>
                         }
                     </ul>
 

@@ -5,6 +5,9 @@
     var currentUser = Context.Session.GetString("User");
     var isAdmin = Context.Session.GetString("AdminAuth") == "true";
     var featured = Model.OneCikanIcerik;
+    var spotlightAnime = Model.SpotlightAnime;
+    var spotlightManga = Model.SpotlightManga;
+    var spotlightFilm = Model.SpotlightFilm;
     var spotlightTags = Model.Kategoriler.Take(6).ToList();
 }
 
@@ -63,30 +66,97 @@
     </div>
     @if (featured is not null)
     {
-        <a class="hero-visual" href="/Home/Detay/@featured.Id">
-            @if (!string.IsNullOrWhiteSpace(featured.GorselKaynak))
-            {
-                <div class="media-frame media-frame--hero" data-media-frame>
-                    <img src="@featured.GorselKaynak" alt="@featured.Baslik kapağı" class="media-frame__image" data-fallback-image />
-                    <div class="poster-placeholder poster-placeholder--title hero-visual__placeholder media-frame__fallback" data-media-fallback hidden>
+        <div class="hero-visual-stack">
+            <a class="hero-visual hero-visual--main" href="/Home/Detay/@featured.Id">
+                @if (!string.IsNullOrWhiteSpace(featured.GorselKaynak))
+                {
+                    <div class="media-frame media-frame--hero" data-media-frame>
+                        <img src="@featured.GorselKaynak" alt="@featured.Baslik kapağı" class="media-frame__image" data-fallback-image />
+                        <div class="poster-placeholder poster-placeholder--title hero-visual__placeholder media-frame__fallback" data-media-fallback hidden>
+                            <strong>@featured.Baslik</strong>
+                            <span>@featured.TurEtiketi</span>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="poster-placeholder poster-placeholder--title hero-visual__placeholder">
                         <strong>@featured.Baslik</strong>
                         <span>@featured.TurEtiketi</span>
                     </div>
-                </div>
-            }
-            else
-            {
-                <div class="poster-placeholder poster-placeholder--title hero-visual__placeholder">
+                }
+                <div class="hero-visual__overlay">
+                    <span class="stat-label">Öne Çıkan</span>
                     <strong>@featured.Baslik</strong>
-                    <span>@featured.TurEtiketi</span>
+                    <p>@featured.FormatEtiketi • @featured.TurEtiketi • @featured.DonemEtiketi</p>
                 </div>
-            }
-            <div class="hero-visual__overlay">
-                <span class="stat-label">Öne Çıkan</span>
-                <strong>@featured.Baslik</strong>
-                <p>@featured.FormatEtiketi • @featured.TurEtiketi • @featured.DonemEtiketi</p>
+            </a>
+
+            <div class="hero-visual-stack__row">
+                @if (spotlightAnime is not null)
+                {
+                    <a class="hero-visual-mini" href="/Home/Detay/@spotlightAnime.Id">
+                        @if (!string.IsNullOrWhiteSpace(spotlightAnime.GorselKaynak))
+                        {
+                            <img src="@spotlightAnime.GorselKaynak" alt="@spotlightAnime.Baslik" />
+                        }
+                        else
+                        {
+                            <div class="poster-placeholder poster-placeholder--title hero-visual-mini__placeholder">
+                                <strong>@spotlightAnime.Baslik</strong>
+                                <span>@spotlightAnime.TurEtiketi</span>
+                            </div>
+                        }
+                        <div class="hero-visual-mini__overlay">
+                            <span class="stat-label">Anime</span>
+                            <strong>@spotlightAnime.Baslik</strong>
+                        </div>
+                    </a>
+                }
+
+                @if (spotlightManga is not null)
+                {
+                    <a class="hero-visual-mini" href="/Home/Detay/@spotlightManga.Id">
+                        @if (!string.IsNullOrWhiteSpace(spotlightManga.GorselKaynak))
+                        {
+                            <img src="@spotlightManga.GorselKaynak" alt="@spotlightManga.Baslik" />
+                        }
+                        else
+                        {
+                            <div class="poster-placeholder poster-placeholder--title hero-visual-mini__placeholder">
+                                <strong>@spotlightManga.Baslik</strong>
+                                <span>@spotlightManga.TurEtiketi</span>
+                            </div>
+                        }
+                        <div class="hero-visual-mini__overlay">
+                            <span class="stat-label">Manga</span>
+                            <strong>@spotlightManga.Baslik</strong>
+                        </div>
+                    </a>
+                }
+
+                @if (spotlightFilm is not null)
+                {
+                    <a class="hero-visual-mini" href="/Home/Detay/@spotlightFilm.Id">
+                        @if (!string.IsNullOrWhiteSpace(spotlightFilm.GorselKaynak))
+                        {
+                            <img src="@spotlightFilm.GorselKaynak" alt="@spotlightFilm.Baslik" />
+                        }
+                        else
+                        {
+                            <div class="poster-placeholder poster-placeholder--title hero-visual-mini__placeholder">
+                                <strong>@spotlightFilm.Baslik</strong>
+                                <span>@spotlightFilm.TurEtiketi</span>
+                            </div>
+                        }
+                        <div class="hero-visual-mini__overlay">
+                            <span class="stat-label">Film</span>
+                            <strong>@spotlightFilm.Baslik</strong>
+                        </div>
+                    </a>
+                }
             </div>
-        </a>
+        </div>
     }
 </section>
 

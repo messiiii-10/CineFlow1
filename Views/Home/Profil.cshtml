@@ -90,158 +90,216 @@
     <article class="surface-panel">
         @if (Model.IsOverviewSection)
         {
-            <div class="section-heading mb-3">
-                <div>
-                    <div class="eyebrow">Genel Bakış</div>
-                    <h2>Profil Özeti</h2>
-                </div>
-            </div>
-
-            <div class="profile-summary-grid">
-                <div>
-                    <span class="stat-label">Yorum Yapılan İçerik</span>
-                    <strong>@Model.YorumYapilanIcerikSayisi</strong>
-                </div>
-                <div>
-                    <span class="stat-label">Toplam Yorum</span>
-                    <strong>@Model.YorumSayisi</strong>
-                </div>
-                <div>
-                    <span class="stat-label">Ortalama Puanım</span>
-                    <strong>@(Model.OrtalamaPuan.HasValue ? $"{Model.OrtalamaPuan.Value:F1}/10" : "-")</strong>
-                </div>
-            </div>
-
-            <div class="profile-feature-grid mt-5">
-                <section class="profile-feature-panel">
+            <div class="row g-4">
+                <!-- Sol taraf: favoriler + son aktiviteler (Letterboxd ana kolon mantığı) -->
+                <div class="col-lg-8">
                     <div class="section-heading mb-3">
                         <div>
-                            <div class="eyebrow">Favoriler</div>
-                            <h3>Öne Çıkardıkların</h3>
+                            <div class="eyebrow">Profil</div>
+                            <h2>Öne Çıkanlar</h2>
                         </div>
                     </div>
 
-                    @if (Model.FavoriIcerikler.Count == 0)
-                    {
-                        <div class="empty-state">
-                            <h3>Henüz favori yok</h3>
-                            <p>Detay sayfalarında favori butonuna bastığında burada görünmeye başlayacak.</p>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="profile-library__grid">
-                            @foreach (var kayit in Model.FavoriIcerikler.Take(4))
+                    <section class="mb-4">
+                        <div class="d-flex justify-content-between align-items-baseline mb-2">
+                            <span class="stat-label text-uppercase">Favori İçerikler</span>
+                            @if (Model.FavoriIcerikler.Count > 4)
                             {
-                                <a class="profile-library__card" href="/Home/Detay/@kayit.IcerikId">
-                                    @if (!string.IsNullOrWhiteSpace(kayit.GorselKaynak))
-                                    {
-                                        <div class="media-frame" data-media-frame>
-                                            <img src="@kayit.GorselKaynak" alt="@kayit.Baslik" class="media-frame__image" data-fallback-image />
-                                            <div class="profile-library__placeholder media-frame__fallback" data-media-fallback hidden>@kayit.TurEtiketi</div>
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <div class="profile-library__placeholder">@kayit.TurEtiketi</div>
-                                    }
-
-                                    <div class="profile-library__body">
-                                        <strong>@kayit.Baslik</strong>
-                                        <span>@kayit.FormatEtiketi</span>
-                                        <div class="d-flex flex-wrap gap-2 mt-2">
-                                            <span class="soft-badge">Favori</span>
-                                            @if (kayit.SonZiyaretTarihi.HasValue)
-                                            {
-                                                <span class="soft-badge soft-badge--dark">@kayit.SonZiyaretTarihi.Value.ToLocalTime().ToString("dd.MM.yyyy")</span>
-                                            }
-                                        </div>
-                                    </div>
-                                </a>
+                                <a href="/Home/Profil?section=favorites#profil-tepe" class="small text-decoration-none">Tümünü gör</a>
                             }
                         </div>
-                    }
-                </section>
 
-                <section class="profile-feature-panel">
-                    <div class="section-heading mb-3">
-                        <div>
-                            <div class="eyebrow">Ziyaret Geçmişi</div>
-                            <h3>Son Açtıkların</h3>
-                        </div>
-                    </div>
-
-                    @if (Model.SonZiyaretler.Count == 0)
-                    {
-                        <div class="empty-state">
-                            <h3>Henüz ziyaret geçmişi yok</h3>
-                            <p>Bir detay sayfası açtığında burada son baktığın yerler listelenecek.</p>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="profile-library__grid">
-                            @foreach (var kayit in Model.SonZiyaretler.Take(4))
-                            {
-                                <a class="profile-library__card" href="/Home/Detay/@kayit.IcerikId">
-                                    @if (!string.IsNullOrWhiteSpace(kayit.GorselKaynak))
-                                    {
-                                        <div class="media-frame" data-media-frame>
-                                            <img src="@kayit.GorselKaynak" alt="@kayit.Baslik" class="media-frame__image" data-fallback-image />
-                                            <div class="profile-library__placeholder media-frame__fallback" data-media-fallback hidden>@kayit.TurEtiketi</div>
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <div class="profile-library__placeholder">@kayit.TurEtiketi</div>
-                                    }
-
-                                    <div class="profile-library__body">
-                                        <strong>@kayit.Baslik</strong>
-                                        <span>@kayit.FormatEtiketi</span>
-                                        @if (kayit.SonZiyaretTarihi.HasValue)
+                        @if (Model.FavoriIcerikler.Count == 0)
+                        {
+                            <div class="empty-state">
+                                <h3>Henüz favori yok</h3>
+                                <p>Detay sayfalarında favori butonuna bastığında burada görünmeye başlayacak.</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="profile-library__grid">
+                                @foreach (var kayit in Model.FavoriIcerikler.Take(8))
+                                {
+                                    <a class="profile-library__card" href="/Home/Detay/@kayit.IcerikId">
+                                        @if (!string.IsNullOrWhiteSpace(kayit.GorselKaynak))
                                         {
-                                            <div class="d-flex flex-wrap gap-2 mt-2">
-                                                <span class="soft-badge soft-badge--dark">@kayit.SonZiyaretTarihi.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</span>
+                                            <div class="media-frame" data-media-frame>
+                                                <img src="@kayit.GorselKaynak" alt="@kayit.Baslik" class="media-frame__image" data-fallback-image />
+                                                <div class="profile-library__placeholder media-frame__fallback" data-media-fallback hidden>@kayit.TurEtiketi</div>
                                             </div>
                                         }
-                                    </div>
-                                </a>
+                                        else
+                                        {
+                                            <div class="profile-library__placeholder">@kayit.TurEtiketi</div>
+                                        }
+
+                                        <div class="profile-library__body">
+                                            <strong>@kayit.Baslik</strong>
+                                            <span>@kayit.FormatEtiketi</span>
+                                            <div class="d-flex flex-wrap gap-2 mt-2">
+                                                <span class="soft-badge">Favori</span>
+                                                @if (kayit.SonZiyaretTarihi.HasValue)
+                                                {
+                                                    <span class="soft-badge soft-badge--dark">@kayit.SonZiyaretTarihi.Value.ToLocalTime().ToString("dd.MM.yyyy")</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </a>
+                                }
+                            </div>
+                        }
+                    </section>
+
+                    <section class="mt-4">
+                        <div class="d-flex justify-content-between align-items-baseline mb-2">
+                            <span class="stat-label text-uppercase">Son Aktiviteler</span>
+                            @if (Model.SonZiyaretler.Count > 4)
+                            {
+                                <a href="/Home/Profil?section=history#profil-tepe" class="small text-decoration-none">Tüm geçmiş</a>
                             }
                         </div>
-                    }
-                </section>
-            </div>
 
-            <div class="section-heading mt-5 mb-3">
-                <div>
-                    <div class="eyebrow">Yorumlar</div>
-                    <h2>Son Yazdıkların</h2>
-                </div>
-            </div>
-
-            @if (Model.SonYorumlar.Count == 0)
-            {
-                <div class="empty-state">
-                    <h3>Henüz yorum yok</h3>
-                    <p>İlk yorumunu bıraktığında burada listelenecek.</p>
-                </div>
-            }
-            else
-            {
-                <div class="comment-list">
-                    @foreach (var yorum in Model.SonYorumlar)
-                    {
-                        <article class="comment-card">
-                            <div class="comment-card__head">
-                                <a href="/Home/Detay/@yorum.IcerikId" class="fw-semibold text-decoration-none">@yorum.IcerikBaslik</a>
-                                <span>@yorum.Tarih.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</span>
+                        @if (Model.SonZiyaretler.Count == 0)
+                        {
+                            <div class="empty-state">
+                                <h3>Henüz ziyaret geçmişi yok</h3>
+                                <p>Bir detay sayfası açtığında burada son baktığın yerler listelenecek.</p>
                             </div>
-                            <p>@yorum.Mesaj</p>
-                        </article>
-                    }
+                        }
+                        else
+                        {
+                            <div class="profile-library__grid">
+                                @foreach (var kayit in Model.SonZiyaretler.Take(8))
+                                {
+                                    <a class="profile-library__card" href="/Home/Detay/@kayit.IcerikId">
+                                        @if (!string.IsNullOrWhiteSpace(kayit.GorselKaynak))
+                                        {
+                                            <div class="media-frame" data-media-frame>
+                                                <img src="@kayit.GorselKaynak" alt="@kayit.Baslik" class="media-frame__image" data-fallback-image />
+                                                <div class="profile-library__placeholder media-frame__fallback" data-media-fallback hidden>@kayit.TurEtiketi</div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="profile-library__placeholder">@kayit.TurEtiketi</div>
+                                        }
+
+                                        <div class="profile-library__body">
+                                            <strong>@kayit.Baslik</strong>
+                                            <span>@kayit.FormatEtiketi</span>
+                                            @if (kayit.SonZiyaretTarihi.HasValue)
+                                            {
+                                                <div class="d-flex flex-wrap gap-2 mt-2">
+                                                    <span class="soft-badge soft-badge--dark">@kayit.SonZiyaretTarihi.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</span>
+                                                </div>
+                                            }
+                                        </div>
+                                    </a>
+                                }
+                            </div>
+                        }
+                    </section>
+
+                    <section class="mt-5">
+                        <div class="section-heading mb-3">
+                            <div>
+                                <div class="eyebrow">Yorumlar</div>
+                                <h2>Son Yazdıkların</h2>
+                            </div>
+                        </div>
+
+                        @if (Model.SonYorumlar.Count == 0)
+                        {
+                            <div class="empty-state">
+                                <h3>Henüz yorum yok</h3>
+                                <p>İlk yorumunu bıraktığında burada listelenecek.</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="comment-list">
+                                @foreach (var yorum in Model.SonYorumlar)
+                                {
+                                    <article class="comment-card">
+                                        <div class="comment-card__head">
+                                            <a href="/Home/Detay/@yorum.IcerikId" class="fw-semibold text-decoration-none">@yorum.IcerikBaslik</a>
+                                            <span>@yorum.Tarih.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</span>
+                                        </div>
+                                        <p>@yorum.Mesaj</p>
+                                    </article>
+                                }
+                            </div>
+                        }
+                    </section>
                 </div>
-            }
+
+                <!-- Sağ taraf: istatistikler + küçük watchlist (Letterboxd sağ kolon mantığı) -->
+                <div class="col-lg-4">
+                    <div class="profile-summary-grid mb-4">
+                        <div>
+                            <span class="stat-label">Yorum Yapılan İçerik</span>
+                            <strong>@Model.YorumYapilanIcerikSayisi</strong>
+                        </div>
+                        <div>
+                            <span class="stat-label">Toplam Yorum</span>
+                            <strong>@Model.YorumSayisi</strong>
+                        </div>
+                        <div>
+                            <span class="stat-label">Ortalama Puanım</span>
+                            <strong>@(Model.OrtalamaPuan.HasValue ? $"{Model.OrtalamaPuan.Value:F1}/10" : "-")</strong>
+                        </div>
+                    </div>
+
+                    <div class="profile-feature-panel mb-4">
+                        <div class="d-flex justify-content-between align-items-baseline mb-2">
+                            <span class="stat-label text-uppercase">İzleme Listesi</span>
+                            <span class="small text-muted">@Model.KutuphaneKaydiSayisi kayıt</span>
+                        </div>
+
+                        @if (Model.KutuphaneBolumleri.Count == 0)
+                        {
+                            <p class="mb-0 text-muted">Listene henüz içerik eklemedin.</p>
+                        }
+                        else
+                        {
+                            var ilkBolum = Model.KutuphaneBolumleri.First();
+                            <div class="profile-library__grid">
+                                @foreach (var kayit in ilkBolum.Icerikler.Take(8))
+                                {
+                                    <a class="profile-library__card" href="/Home/Detay/@kayit.IcerikId">
+                                        @if (!string.IsNullOrWhiteSpace(kayit.GorselKaynak))
+                                        {
+                                            <div class="media-frame" data-media-frame>
+                                                <img src="@kayit.GorselKaynak" alt="@kayit.Baslik" class="media-frame__image" data-fallback-image />
+                                                <div class="profile-library__placeholder media-frame__fallback" data-media-fallback hidden>@kayit.TurEtiketi</div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="profile-library__placeholder">@kayit.TurEtiketi</div>
+                                        }
+
+                                        <div class="profile-library__body">
+                                            <strong>@kayit.Baslik</strong>
+                                            <span>@kayit.FormatEtiketi</span>
+                                        </div>
+                                    </a>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <div class="profile-feature-panel">
+                        <div class="d-flex justify-content-between align-items-baseline mb-2">
+                            <span class="stat-label text-uppercase">Genel Durum</span>
+                        </div>
+                        <p class="mb-1">Favoriler: <strong>@Model.FavoriSayisi</strong></p>
+                        <p class="mb-1">Ziyaret Edilenler: <strong>@Model.ZiyaretSayisi</strong></p>
+                        <p class="mb-0 text-muted small">Bu özet, üstteki verilerle birlikte proje rubriğindeki “kullanıcı istatistikleri” bölümünü destekler.</p>
+                    </div>
+                </div>
+            </div>
         }
         else if (Model.IsFavoritesSection)
         {

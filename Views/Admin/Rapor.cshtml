@@ -246,46 +246,7 @@
 
         .empty-state { padding: 3rem; text-align: center; color: var(--muted); }
 
-        /* Admin nav header */
-        .admin-topbar {
-            position: sticky;
-            top: 0;
-            z-index: 60;
-            backdrop-filter: blur(14px);
-        }
-        .admin-nav {
-            padding: 0.95rem 0;
-            background:
-                linear-gradient(90deg, rgba(255,255,255,0.05), transparent 22%),
-                linear-gradient(135deg, rgba(24,18,15,0.98), rgba(58,40,31,0.95) 58%, rgba(91,56,39,0.92));
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-            box-shadow: 0 16px 44px rgba(31,26,23,0.22);
-        }
-        .admin-nav__inner {
-            max-width: 1560px;
-            margin: 0 auto;
-            padding: 0 1.1rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-        }
-        .admin-nav__left { display: flex; align-items: center; gap: 1.5rem; }
-        .admin-brand { font-size: 1.4rem; font-weight: 700; color: #fff; text-decoration: none; letter-spacing: -0.03em; font-family: "Space Grotesk", sans-serif; }
-        .admin-brand:hover { color: var(--gold); }
-        .admin-nav__links { display: flex; gap: 0.25rem; }
-        .admin-nav__link {
-            padding: 0.45rem 1rem;
-            border-radius: 999px;
-            color: rgba(255,255,255,0.72);
-            font-size: 0.9rem;
-            font-weight: 500;
-            text-decoration: none;
-            transition: background 0.18s, color 0.18s;
-            font-family: "Space Grotesk", sans-serif;
-        }
-        .admin-nav__link:hover { background: rgba(255,255,255,0.08); color: #fff; }
-        .admin-nav__link.active { background: rgba(215,186,141,0.18); color: var(--gold); border: 1px solid rgba(215,186,141,0.22); }
+
 
         .page-wrap { max-width: 1560px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
 
@@ -294,23 +255,56 @@
             .rapor-hero__stats { grid-template-columns: repeat(2, 1fr); }
             .charts-row { grid-template-columns: 1fr; }
         }
+
+        @@media print {
+            * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; print-color-adjust: exact !important; box-shadow: none !important; }
+            body, html { background: #fff !important; color: #111 !important; margin: 0 !important; padding: 0 !important; }
+            header, footer, nav, .navbar, .footer-note,
+            .rapor-hero__actions, .filter-panel, form,
+            .charts-row, button { display: none !important; }
+
+            .page-wrap { padding: 1rem !important; max-width: 100% !important; width: 100% !important; margin: 0 !important; }
+
+            .rapor-hero {
+                background: #f5f0ea !important;
+                color: #111 !important;
+                border: 1px solid #bbb !important;
+                border-radius: 8px !important;
+                margin-bottom: 1.5rem !important;
+                page-break-inside: avoid;
+                display: grid !important;
+                grid-template-columns: 1fr 1fr !important;
+            }
+            .rapor-hero__title { color: #111 !important; font-size: 1.8rem !important; }
+            .rapor-hero__sub, .rapor-stat__label { color: #555 !important; }
+            .rapor-stat__value.gold, .rapor-stat__value.white { color: #111 !important; }
+            .rapor-stat { border: 1px solid #ccc !important; background: #fafafa !important; }
+            .rapor-hero::before { display: none !important; }
+
+            .rapor-section-header { margin-top: 1rem !important; }
+            .rapor-section-header h2 { color: #111 !important; font-size: 1.2rem !important; }
+
+            .admin-table-card {
+                background: #fff !important;
+                border: 1px solid #bbb !important;
+                border-radius: 8px !important;
+            }
+            .admin-table-card::before { display: none !important; }
+            .tablo-wrap { overflow: visible !important; }
+            table { width: 100% !important; font-size: 0.8rem !important; }
+            thead th { background: #f0ebe3 !important; color: #333 !important; border-bottom: 2px solid #999 !important; padding: 0.5rem !important; }
+            tbody tr { border-bottom: 1px solid #ddd !important; page-break-inside: avoid; }
+            tbody tr:hover { background: transparent !important; }
+            tbody td { color: #111 !important; padding: 0.45rem 0.6rem !important; }
+            .badge-plan    { background: #dce8ff !important; color: #1a3a7a !important; border: 1px solid #aac !important; }
+            .badge-izliyor { background: #d4f0e2 !important; color: #1a5c36 !important; border: 1px solid #9c9 !important; }
+            .badge-tamam   { background: #fdf3d0 !important; color: #7a5a1a !important; border: 1px solid #dca !important; }
+            .badge-birakti { background: #fde8e0 !important; color: #7a2010 !important; border: 1px solid #e99 !important; }
+            .empty-state { color: #555 !important; }
+        }
     </style>
 
-<!-- NAV -->
-<header class="admin-topbar">
-    <div class="admin-nav">
-        <div class="admin-nav__inner">
-            <div class="admin-nav__left">
-                <a href="/Admin/Index" class="admin-brand">CF</a>
-                <nav class="admin-nav__links">
-                    <a href="/Admin/Index" class="admin-nav__link">İçerikler</a>
-                    <a href="/Admin/Rapor" class="admin-nav__link active">Rapor</a>
-                </nav>
-            </div>
-            <a href="/Admin/Logout" class="btn-rapor-outline" style="font-size:.8rem; padding:.4rem .9rem">Çıkış</a>
-        </div>
-    </div>
-</header>
+
 
 <div class="page-wrap">
 
@@ -330,7 +324,7 @@
                     });
                 }
                 <a href="@indirUrl" class="btn-rapor-accent">⬇ CSV İndir</a>
-                <button type="button" class="btn-rapor-outline" onclick="window.print()">🖨 Yazdır / PDF</button>
+                <button type="button" class="btn-rapor-outline" onclick="printRapor()">🖨 Yazdır / PDF</button>
                 <a href="/Admin/Index" class="btn-rapor-outline" style="color:#fff;border-color:rgba(255,255,255,.22);">← İçeriklere Dön</a>
             </div>
         </div>
@@ -554,4 +548,57 @@ new Chart(document.getElementById('durumChart'), {
         plugins: { legend: { position: 'bottom', labels: { padding: 16, boxWidth: 12, color: '#6d6157' } } }
     }
 });
+
+function printRapor() {
+    var tbody = document.querySelector('.admin-table-card tbody');
+    var rows = tbody ? tbody.innerHTML : '<tr><td colspan="9">Kayıt bulunamadı.</td></tr>';
+
+    var stats = document.querySelector('.rapor-hero__stats');
+    var statsHtml = stats ? stats.outerHTML : '';
+
+    var win = window.open('', '_blank', 'width=900,height=700');
+    win.document.write(`<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"/>
+<title>CineFlow Rapor</title>
+<style>
+  body { font-family: 'Segoe UI', sans-serif; padding: 2rem; color: #111; background: #fff; }
+  h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
+  p { color: #555; font-size: 0.9rem; margin-bottom: 1.5rem; }
+  .stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin-bottom: 2rem; }
+  .stat { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; text-align: center; }
+  .stat-label { font-size: 0.72rem; text-transform: uppercase; color: #888; letter-spacing: 0.05em; }
+  .stat-value { font-size: 1.8rem; font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  thead th { background: #f5f0ea; text-align: left; padding: 0.6rem 0.8rem; border-bottom: 2px solid #ccc; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: #555; }
+  tbody td { padding: 0.5rem 0.8rem; border-bottom: 1px solid #eee; }
+  tbody tr:last-child td { border-bottom: none; }
+  .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.72rem; font-weight: 600; }
+  .badge-plan    { background: #dce8ff; color: #1a3a7a; }
+  .badge-izliyor { background: #d4f0e2; color: #1a5c36; }
+  .badge-tamam   { background: #fdf3d0; color: #7a5a1a; }
+  .badge-birakti { background: #fde8e0; color: #7a2010; }
+  @@media print { body { padding: 1rem; } }
+</style>
+</head>
+<body>
+  <h1>CineFlow &mdash; Rapor & İstatistik</h1>
+  <p>Yazdırma tarihi: ${new Date().toLocaleDateString('tr-TR')}</p>
+  <div class="stats">
+    <div class="stat"><div class="stat-label">Toplam İçerik</div><div class="stat-value">${document.querySelector('.rapor-stat:nth-child(1) .rapor-stat__value')?.textContent || '-'}</div></div>
+    <div class="stat"><div class="stat-label">Kullanıcı</div><div class="stat-value">${document.querySelector('.rapor-stat:nth-child(2) .rapor-stat__value')?.textContent || '-'}</div></div>
+    <div class="stat"><div class="stat-label">Toplam Yorum</div><div class="stat-value">${document.querySelector('.rapor-stat:nth-child(3) .rapor-stat__value')?.textContent || '-'}</div></div>
+    <div class="stat"><div class="stat-label">Liste Kaydı</div><div class="stat-value">${document.querySelector('.rapor-stat:nth-child(4) .rapor-stat__value')?.textContent || '-'}</div></div>
+  </div>
+  <h2 style="font-size:1.1rem;margin-bottom:1rem;">Kullanıcı Kayıt Raporu</h2>
+  <table>
+    <thead><tr><th>#</th><th>Kullanıcı</th><th>İçerik</th><th>Tür</th><th>Durum</th><th>Puan</th><th>Favori</th><th>Ziyaret</th><th>Tarih</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <script>window.onload = function(){ window.print(); }<\/script>
+</body>
+</html>`);
+    win.document.close();
+}
 </script>

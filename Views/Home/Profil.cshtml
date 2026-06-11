@@ -1,5 +1,40 @@
 @model CineFlow.Models.ViewModels.UserProfileViewModel
 
+<style>
+  .profile-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
+    gap: 1.6rem;
+    align-items: start;
+  }
+  .profile-shell > article {
+    min-width: 0;
+    overflow: hidden;
+  }
+  .profile-shell .col-lg-8,
+  .profile-shell .col-lg-4 {
+    min-width: 0;
+  }
+  media (max-width: 1024px) {
+    .profile-shell {
+      grid-template-columns: 1fr;
+    }
+  }
+  .profile-library__grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+  .profile-library__card {
+    min-width: 0;
+  }
+  .profile-library__card strong,
+  .profile-library__card span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+  }
+</style>
+
 <section class="page-intro mt-4" id="profil-tepe">
     <div class="section-heading">
         <div>
